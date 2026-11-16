@@ -94,4 +94,16 @@ describe('tokens', () => {
     })
     expect(res.status).toBe(401)
   })
+  test('tras cerrar sesión, el token anterior ya no da acceso de admin', async () => {
+    const admin = await createTestAdmin()
+    const c = await admin.aal2Client()
+    const token = await accessToken(c)
+    await c.auth.signOut({ scope: 'global' })
+    const res = await fetch(`${URL()}/rest/v1/rpc/is_admin`, {
+      method: 'POST',
+      headers: { apikey: process.env.TEST_SUPABASE_PUBLISHABLE_KEY!, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: '{}',
+    })
+    expect(await res.json()).toBe(false)
+  })
 })
