@@ -65,8 +65,8 @@ import * as OTPAuth from 'otpauth'
 
 export const PASSWORD = 'Prueba-Segura-2026x'
 
-export async function createTestUser(): Promise<{ id: string; email: string }> {
-  const email = `user-${crypto.randomUUID()}@test.local`
+export async function createTestUser(email = `user-${crypto.randomUUID()}@test.local`): Promise<{ id: string; email: string }> {
+  await sql('delete from auth.users where email = $1', [email])
   const { data, error } = await serviceClient().auth.admin.createUser({ email, password: PASSWORD, email_confirm: true })
   if (error) throw error
   return { id: data.user.id, email }
@@ -91,8 +91,8 @@ export async function elevateToAal2(c: SupabaseClient): Promise<string> {
 }
 
 /** Crea el admin de pruebas (reemplaza cualquier admin previo en el entorno de pruebas). */
-export async function createTestAdmin() {
-  const user = await createTestUser()
+export async function createTestAdmin(email?: string) {
+  const user = await createTestUser(email)
   await sql('delete from private.app_admin')
   await sql('insert into private.app_admin (user_id) values ($1)', [user.id])
   return {

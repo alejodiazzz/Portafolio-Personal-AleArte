@@ -424,3 +424,13 @@ enabled = true
 # formatted with uppercase keywords, indent 2, max width 180, trailing commas,
 # and column/key alignment. Set to "null" to emit raw, unformatted SQL.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":180,\"commaStyle\":\"trailing\"}"
+
+# La verificación del JWT se hace dentro de cada función (requireAdmin / x-cron-secret).
+[functions.media-sign]
+verify_jwt = false
+
+[functions.media-delete]
+verify_jwt = false
+
+[functions.media-cleanup]
+verify_jwt = false
