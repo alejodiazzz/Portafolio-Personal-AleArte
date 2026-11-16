@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { supabase } from '../../lib/supabase'
+import { publicSupabase } from '../../lib/supabase'
 import type { ArtworkImage, Category, PublicArtwork } from '../../types'
 
 export const PAGE_SIZE = 12
@@ -64,4 +64,4 @@ export function createPortfolioApi(db: SupabaseClient) {
   return { listCategories, listArtworks, getArtworkBySlug }
 }
 
-export const portfolioApi = createPortfolioApi(supabase)
+export const portfolioApi = createPortfolioApi(publicSupabase)

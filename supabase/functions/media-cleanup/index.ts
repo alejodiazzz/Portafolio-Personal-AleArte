@@ -4,8 +4,7 @@ import { serviceClient } from '../_shared/auth.ts'
 import { ARTWORKS_PREFIX } from '../_shared/cloudinary.ts'
 import { cloudinaryConfig, deleteMany, listByPrefix } from '../_shared/cloudinary-api.ts'
 import { fail, json } from '../_shared/http.ts'
-
-const GRACE_MS = 24 * 60 * 60 * 1000
+import { findOrphans } from '../_shared/orphans.ts'
 
 function safeEqual(a: string, b: string): boolean {
   const x = new TextEncoder().encode(a)
@@ -22,16 +21,13 @@ Deno.serve(async (req) => {
   if (secret.length < 16 || !safeEqual(given, secret)) return fail(401)
 
   try {
-    const db = serviceClient()
-    const { data: rows, error } = await db.from('artwork_images').select('storage_path')
-    if (error) throw error
-    const known = new Set(rows.map((r) => r.storage_path as string))
-
+    const db = serviceClient() // service role: ve también imágenes de borradores
     const resources = await listByPrefix(cloudinaryConfig(), ARTWORKS_PREFIX)
-    const cutoff = Date.now() - GRACE_MS
-    const orphans = resources
-      .filter((r) => !known.has(r.public_id) && Date.parse(r.created_at) < cutoff)
-      .map((r) => r.public_id)
+    const orphans = await findOrphans(resources, async (ids) => {
+      const { data, error } = await db.from('artwork_images').select('storage_path').in('storage_path', ids)
+      if (error) throw error // ante cualquier error de BD no se borra nada
+      return data.map((r) => r.storage_path as string)
+    })
     const deleted = orphans.length ? await deleteMany(cloudinaryConfig(), orphans) : 0
     return json({ checked: resources.length, deleted })
   } catch (e) {
