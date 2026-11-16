@@ -116,7 +116,7 @@ Detalle: **Cloudflare Pages** (gratis, sin tarjeta, CDN, `_headers` para CSP y c
 |---|---|---|
 | categories | SELECT todo | INSERT/UPDATE/DELETE |
 | artworks | sin acceso directo; leen la vista `public_artworks` (solo publicadas, precio anulado si `sold`/`commission`, columnas mínimas) | todo sobre la tabla |
-| artwork_images | SELECT si su obra está publicada | todo |
+| artwork_images | SELECT si su obra está publicada (vía función `security definer` `private.is_artwork_published(id)`, porque anon no puede leer `artworks`) | todo |
 
 Además: `revoke` de privilegios innecesarios (p. ej. TRUNCATE) a `anon`/`authenticated`; sin funciones `security definer` expuestas salvo `is_admin()`.
 
