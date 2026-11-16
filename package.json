@@ -9,7 +9,8 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:security": "vitest run -c vitest.security.config.ts --mode test"
+    "test:security": "vitest run -c vitest.security.config.ts --mode test",
+    "check:secrets": "node scripts/check-bundle-secrets.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.0",

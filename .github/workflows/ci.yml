@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    env:
+      # Valores públicos de ejemplo: el build real lo hace Cloudflare Pages con sus propias variables.
+      VITE_SUPABASE_URL: https://example.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci
+      VITE_CLOUDINARY_CLOUD_NAME: demo
+      VITE_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
+      VITE_WHATSAPP_NUMBER: '573001234567'
+      VITE_INSTAGRAM_URL: https://instagram.com/example
+      VITE_SITE_URL: https://example.pages.dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npm run check:secrets

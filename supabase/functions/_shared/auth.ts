@@ -7,9 +7,19 @@ const env = (k: string) => {
   return v
 }
 
+/** Clave legacy o, si está desactivada, la clave nueva por defecto (SUPABASE_*_KEYS es JSON {nombre: clave}). */
+function key(legacy: string, modern: string): string {
+  const v = Deno.env.get(legacy)
+  if (v) return v
+  const keys = JSON.parse(Deno.env.get(modern) ?? '{}') as Record<string, string>
+  const k = keys.default ?? Object.values(keys)[0]
+  if (!k) throw new Error(`Falta ${legacy} / ${modern}`)
+  return k
+}
+
 /** Cliente con privilegios de servicio (solo dentro de funciones, nunca se expone). */
 export function serviceClient(): SupabaseClient {
-  return createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'), {
+  return createClient(env('SUPABASE_URL'), key('SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_SECRET_KEYS'), {
     auth: { persistSession: false, autoRefreshToken: false },
   })
 }
@@ -27,7 +37,7 @@ export async function requireAdmin(
   const token = header.startsWith('Bearer ') ? header.slice(7) : ''
   if (!token) return fail(401, origin)
 
-  const userClient = createClient(env('SUPABASE_URL'), env('SUPABASE_ANON_KEY'), {
+  const userClient = createClient(env('SUPABASE_URL'), key('SUPABASE_ANON_KEY', 'SUPABASE_PUBLISHABLE_KEYS'), {
     global: { headers: { Authorization: `Bearer ${token}` } },
     auth: { persistSession: false, autoRefreshToken: false },
   })
