@@ -50,8 +50,8 @@ Totales: **unitarias 93/93**, **seguridad 43 pasan, 3 omitidas** (requieren cred
 ## Pendiente de verificar en la nube (requiere las cuentas del propietario)
 
 - ~~P1. Flujo real con Cloudinary~~ ✅ 2026-11-16: 46/46 pruebas (subida firmada, borrado de obra + recurso, firma manipulada rechazada, barrido). `media-cleanup` en prod → `{"checked":0,"deleted":0}`.
-- P2. Turnstile en el login (prod con claves reales).
-- P3. ~~CORS de las funciones~~ ✅ verificado en prod (origen ajeno sin cabecera; `ale-arte.pages.dev` permitido). Pendiente: cabeceras `_headers` en Cloudflare Pages (`curl -I`).
+- ~~P2. Turnstile en el login~~ ✅ prod: login sin token → `captcha_failed`; login real del admin con CAPTCHA + MFA TOTP completado.
+- P3. ~~CORS de las funciones~~ ✅ verificado en prod (origen ajeno sin cabecera; `ale-arte.pages.dev` permitido). Cabeceras verificadas en producción (Workers): CSP, HSTS, `X-Frame-Options: DENY`, `nosniff`.
 - P4. ~~`db advisors` en prod~~ ✅ sin errores ni advertencias. Registro deshabilitado y escritura anónima bloqueada verificados en prod.
 - P5. Rate limit de Auth tras varios intentos fallidos.
 
@@ -61,3 +61,11 @@ Totales: **unitarias 93/93**, **seguridad 43 pasan, 3 omitidas** (requieren cred
 - Las imágenes de obras en borrador tienen URL pública no adivinable (UUID). Es aceptable para este caso.
 - En local, PostgREST todavía sirve el esquema OpenAPI con la clave pública; en la nube esto ya está deshabilitado desde feb-2026. Además, el esquema solo revela nombres de tablas y columnas, no datos.
 - Planes gratuitos: los límites pueden cambiar. El keep-alive evita la pausa de Supabase y el barrido controla el almacenamiento en Cloudinary.
+
+## Verificación de punta a punta en producción (2026-11-16)
+
+El propietario completó el flujo real en `portafolio-personal-alearte.diaza-alejandro123.workers.dev`: login con CAPTCHA, enrolamiento TOTP, creación de obra, subida de imagen, portada y publicación. Comprobado desde la BD y Cloudinary:
+
+- 1 obra publicada, 1 imagen (WebP 1440×2560, 508 KB) con portada; 1 factor MFA verificado del único admin.
+- Cloudinary: 1 recurso, coincide con la BD, sin huérfanos.
+- Lectura anónima de `public_artworks`: la obra "por encargo" llega con `price: null`. Lectura anónima de `artworks.price` → `42501`.

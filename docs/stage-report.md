@@ -47,12 +47,11 @@ Ver [security-report.md](security-report.md). En resumen: la autorización vive 
 - `npx supabase db advisors`: sin errores ni advertencias.
 - `npm run check:secrets`: sin secretos en el bundle.
 
-## 6. Qué falta para desplegar (requiere tus cuentas: Tarea 0)
+## 6. Despliegue
 
-1. Crear los 2 proyectos Supabase (dev y prod), la cuenta de Cloudinary, Turnstile y Pages en Cloudflare, y el repositorio en GitHub.
-2. Seguir [deploy.md](deploy.md): `db push`, secretos y despliegue de funciones, variables de Pages y secretos de GitHub.
-3. Crear tu usuario admin y registrarlo ([setup-auth.md](setup-auth.md)), y enrolar tu autenticador.
-4. Ejecutar las pruebas pendientes en la nube (P1–P5 del informe de seguridad) y la prueba de punta a punta en el navegador: subir fotos reales, portada, reemplazo y borrado.
+**Desplegado y verificado** en https://portafolio-personal-alearte.diaza-alejandro123.workers.dev (Cloudflare Workers + Supabase `ale-arte-prod`, us-east-1 + Cloudinary). Admin registrado con MFA. El flujo completo fue probado por el propietario.
+
+Pendientes opcionales: proyecto Supabase de pruebas en la nube (hoy las pruebas corren en local), secretos de GitHub para el workflow de keep-alive (`SUPABASE_URL_PROD`, `CRON_SECRET_PROD`), dominio propio y ajustes menores del informe de revisión.
 
 ## 7. Siguiente etapa
 
