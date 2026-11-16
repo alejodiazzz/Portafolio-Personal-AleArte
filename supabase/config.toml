@@ -434,3 +434,11 @@ verify_jwt = false
 
 [functions.media-cleanup]
 verify_jwt = false
+
+# ── Producción ── (la URL se actualiza al crear Cloudflare Pages)
+[remotes.prod]
+project_id = "wjnkupskcibwgkpcbjio"
+
+[remotes.prod.auth]
+site_url = "https://ale-arte.pages.dev"
+additional_redirect_urls = ["https://ale-arte.pages.dev"]
