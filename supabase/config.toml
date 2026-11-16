@@ -440,5 +440,5 @@ verify_jwt = false
 project_id = "wjnkupskcibwgkpcbjio"
 
 [remotes.prod.auth]
-site_url = "https://ale-arte.pages.dev"
-additional_redirect_urls = ["https://ale-arte.pages.dev"]
+site_url = "https://portafolio-personal-alearte.diaza-alejandro123.workers.dev"
+additional_redirect_urls = ["https://portafolio-personal-alearte.diaza-alejandro123.workers.dev"]
