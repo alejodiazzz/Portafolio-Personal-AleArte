@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 const schema = z.object({
   VITE_SUPABASE_URL: z.url(),
-  VITE_SUPABASE_ANON_KEY: z.string().min(1),
+  VITE_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
   VITE_CLOUDINARY_CLOUD_NAME: z.string().regex(/^[a-z0-9_-]+$/i),
   VITE_TURNSTILE_SITE_KEY: z.string().min(1),
   VITE_WHATSAPP_NUMBER: z.string().regex(/^\d{8,15}$/, 'solo dígitos con código de país, sin +'),
@@ -12,7 +12,7 @@ const schema = z.object({
 
 export type Env = {
   supabaseUrl: string
-  supabaseAnonKey: string
+  supabasePublishableKey: string
   cloudinaryCloudName: string
   turnstileSiteKey: string
   whatsappNumber: string
@@ -29,7 +29,7 @@ export function parseEnv(raw: Record<string, string | undefined>): Env {
   const e = result.data
   return {
     supabaseUrl: e.VITE_SUPABASE_URL,
-    supabaseAnonKey: e.VITE_SUPABASE_ANON_KEY,
+    supabasePublishableKey: e.VITE_SUPABASE_PUBLISHABLE_KEY,
     cloudinaryCloudName: e.VITE_CLOUDINARY_CLOUD_NAME,
     turnstileSiteKey: e.VITE_TURNSTILE_SITE_KEY,
     whatsappNumber: e.VITE_WHATSAPP_NUMBER,

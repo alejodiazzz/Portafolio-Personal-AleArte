@@ -3,7 +3,7 @@ import { parseEnv } from './env'
 
 const valid = {
   VITE_SUPABASE_URL: 'https://abc.supabase.co',
-  VITE_SUPABASE_ANON_KEY: 'anon-key',
+  VITE_SUPABASE_PUBLISHABLE_KEY: 'anon-key',
   VITE_CLOUDINARY_CLOUD_NAME: 'demo',
   VITE_TURNSTILE_SITE_KEY: '1x00000000000000000000AA',
   VITE_WHATSAPP_NUMBER: '573001234567',
@@ -22,7 +22,7 @@ describe('parseEnv', () => {
     expect(() => parseEnv({ ...valid, VITE_WHATSAPP_NUMBER: '+57 300' })).toThrow(/VITE_WHATSAPP_NUMBER/)
   })
   test('rechaza variable faltante', () => {
-    const { VITE_SUPABASE_ANON_KEY: _, ...rest } = valid
-    expect(() => parseEnv(rest)).toThrow(/VITE_SUPABASE_ANON_KEY/)
+    const { VITE_SUPABASE_PUBLISHABLE_KEY: _, ...rest } = valid
+    expect(() => parseEnv(rest)).toThrow(/VITE_SUPABASE_PUBLISHABLE_KEY/)
   })
 })
