@@ -1,0 +1,1 @@
+-- Datos de prueba locales (vacío: las categorías vienen en la migración)

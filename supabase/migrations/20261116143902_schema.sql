@@ -22,6 +22,10 @@ create table public.artworks (
   slug                text not null unique check (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$' and char_length(slug) <= 180),
   description         text check (char_length(description) <= 5000),
   price               numeric(12, 0) check (price >= 0),
+  -- Precio visible al público: solo si la obra está disponible (columna calculada).
+  public_price        numeric(12, 0) generated always as (
+                        case when availability_status = 'available' then price end
+                      ) stored,
   currency            char(3) not null default 'COP' check (currency = 'COP'),
   height              numeric(7, 2) check (height > 0),
   width               numeric(7, 2) check (width > 0),

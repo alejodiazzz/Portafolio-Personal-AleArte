@@ -1,0 +1,61 @@
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import pg from 'pg'
+
+const need = (k: string) => {
+  const v = process.env[k]
+  if (!v) throw new Error(`Falta ${k} en .env.test.local`)
+  return v
+}
+export const URL = () => need('TEST_SUPABASE_URL')
+const opts = { auth: { persistSession: false, autoRefreshToken: false } }
+
+export function anonClient(): SupabaseClient {
+  return createClient(URL(), need('TEST_SUPABASE_PUBLISHABLE_KEY'), opts)
+}
+export function serviceClient(): SupabaseClient {
+  return createClient(URL(), need('TEST_SUPABASE_SECRET_KEY'), opts)
+}
+/** Conexión SQL directa (solo pruebas): para tablas del esquema privado. */
+export async function sql<T = unknown>(text: string, params: unknown[] = []): Promise<T[]> {
+  const client = new pg.Client({ connectionString: need('TEST_DB_URL') })
+  await client.connect()
+  try {
+    return (await client.query(text, params)).rows as T[]
+  } finally {
+    await client.end()
+  }
+}
+
+export async function anyCategoryId(): Promise<string> {
+  const rows = await sql<{ id: string }>(`select id from public.categories order by display_order limit 1`)
+  return rows[0].id
+}
+
+let n = 0
+export async function makeArtwork(
+  overrides: Record<string, unknown> = {},
+): Promise<{ id: string; slug: string }> {
+  const svc = serviceClient()
+  const slug = `test-${Date.now()}-${n++}`
+  const { data, error } = await svc
+    .from('artworks')
+    .insert({ title: 'Obra de prueba', slug, category_id: await anyCategoryId(), ...overrides })
+    .select('id, slug')
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function makeImage(artworkId: string): Promise<{ id: string }> {
+  const { data, error } = await serviceClient()
+    .from('artwork_images')
+    .insert({ artwork_id: artworkId, storage_path: `ale-arte/artworks/${artworkId}/${crypto.randomUUID()}` })
+    .select('id')
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function cleanupTestArtworks() {
+  await sql(`delete from public.artworks where slug like 'test-%'`)
+}

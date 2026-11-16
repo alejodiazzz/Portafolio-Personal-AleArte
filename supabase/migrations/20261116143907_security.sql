@@ -77,6 +77,12 @@ revoke all on public.categories, public.artworks, public.artwork_images from ano
 grant select on public.categories to anon, authenticated;
 grant select, insert, update, delete on public.categories to authenticated;
 grant select, insert, update, delete on public.artworks to authenticated;
+-- anon: permisos POR COLUMNA. Nunca recibe `price` (solo `public_price`).
+grant select (
+  id, slug, title, description, public_price, currency, height, width, measurement_unit,
+  technique, category_id, creation_date, availability_status, publication_status,
+  display_order, created_at
+) on public.artworks to anon;
 grant select on public.artwork_images to anon;
 grant select, insert, update, delete on public.artwork_images to authenticated;
 
@@ -91,7 +97,9 @@ create policy categories_admin_update on public.categories
 create policy categories_admin_delete on public.categories
   for delete to authenticated using ((select private.is_admin()));
 
--- artworks: solo admin (el público lee la vista public_artworks)
+-- artworks: anon ve solo filas publicadas (y solo las columnas concedidas); admin todo
+create policy artworks_public_read on public.artworks
+  for select to anon using (publication_status = 'published');
 create policy artworks_admin_all on public.artworks
   for all to authenticated
   using ((select private.is_admin())) with check ((select private.is_admin()));
@@ -109,16 +117,16 @@ create policy artwork_images_admin_delete on public.artwork_images
   for delete to authenticated using ((select private.is_admin()));
 
 -- ── Vista pública ──────────────────────────────────────────
--- Intencionalmente SIN security_invoker: se ejecuta como su dueño para leer artworks
--- (bloqueada para anon) y expone SOLO obras publicadas y columnas mínimas.
--- El precio se anula para obras vendidas o por encargo (no llega al navegador).
-create view public.public_artworks as
+-- security_invoker: respeta RLS y permisos de columna de quien consulta.
+-- Expone solo obras publicadas; `price` aquí es `public_price` (nulo si vendida/por encargo).
+create view public.public_artworks
+with (security_invoker = true) as
 select
   w.id,
   w.slug,
   w.title,
   w.description,
-  case when w.availability_status = 'available' then w.price end as price,
+  w.public_price as price,
   w.currency,
   w.height,
   w.width,
