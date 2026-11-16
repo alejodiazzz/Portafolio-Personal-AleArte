@@ -59,3 +59,58 @@ export async function makeImage(artworkId: string): Promise<{ id: string }> {
 export async function cleanupTestArtworks() {
   await sql(`delete from public.artworks where slug like 'test-%'`)
 }
+
+// ── Usuarios de prueba ──────────────────────────────────────
+import * as OTPAuth from 'otpauth'
+
+export const PASSWORD = 'Prueba-Segura-2026x'
+
+export async function createTestUser(): Promise<{ id: string; email: string }> {
+  const email = `user-${crypto.randomUUID()}@test.local`
+  const { data, error } = await serviceClient().auth.admin.createUser({ email, password: PASSWORD, email_confirm: true })
+  if (error) throw error
+  return { id: data.user.id, email }
+}
+
+/** Cliente con sesión aal1 (solo contraseña). */
+export async function signIn(email: string): Promise<SupabaseClient> {
+  const c = anonClient()
+  const { error } = await c.auth.signInWithPassword({ email, password: PASSWORD })
+  if (error) throw error
+  return c
+}
+
+/** Enrola TOTP y eleva la sesión a aal2. Devuelve el cliente y el secreto. */
+export async function elevateToAal2(c: SupabaseClient): Promise<string> {
+  const { data, error } = await c.auth.mfa.enroll({ factorType: 'totp' })
+  if (error) throw error
+  const totp = new OTPAuth.TOTP({ secret: OTPAuth.Secret.fromBase32(data.totp.secret) })
+  const v = await c.auth.mfa.challengeAndVerify({ factorId: data.id, code: totp.generate() })
+  if (v.error) throw v.error
+  return data.totp.secret
+}
+
+/** Crea el admin de pruebas (reemplaza cualquier admin previo en el entorno de pruebas). */
+export async function createTestAdmin() {
+  const user = await createTestUser()
+  await sql('delete from private.app_admin')
+  await sql('insert into private.app_admin (user_id) values ($1)', [user.id])
+  return {
+    ...user,
+    aal1Client: () => signIn(user.email),
+    aal2Client: async () => {
+      const c = await signIn(user.email)
+      await elevateToAal2(c)
+      return c
+    },
+  }
+}
+
+export async function deleteTestUsers() {
+  await sql(`delete from auth.users where email like '%@test.local'`)
+}
+
+export async function accessToken(c: SupabaseClient): Promise<string> {
+  const { data } = await c.auth.getSession()
+  return data.session!.access_token
+}
