@@ -107,3 +107,19 @@ describe('tokens', () => {
     expect(await res.json()).toBe(false)
   })
 })
+
+describe('color dominante (escaparate)', () => {
+  test('el admin guarda #rrggbb; valores que no son hex se rechazan; el público lo lee', async () => {
+    const admin = await createTestAdmin()
+    const c = await admin.aal2Client()
+    const path = (n: string) => `ale-arte/artworks/${target.id}/${n}`
+    const ok = await c.from('artwork_images')
+      .insert({ artwork_id: target.id, storage_path: path(crypto.randomUUID()), dominant_color: '#1f3b7a' }).select('id').single()
+    expect(ok.error).toBeNull()
+    for (const bad of ['red', '#1F3B7A', '#123', 'url(x)', '#1f3b7a;x'])
+      expect((await c.from('artwork_images')
+        .insert({ artwork_id: target.id, storage_path: path(crypto.randomUUID()), dominant_color: bad })).error?.code).toBe('23514')
+    const pub = await anonClient().from('artwork_images').select('dominant_color').eq('id', ok.data!.id).single()
+    expect(pub.data?.dominant_color).toBe('#1f3b7a')
+  })
+})

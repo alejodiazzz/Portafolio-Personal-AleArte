@@ -48,6 +48,7 @@ export async function uploadArtworkImage(
       height: uploaded.height,
       format: uploaded.format,
       bytes: uploaded.bytes,
+      dominant_color: prepared.color,
       is_cover: opts.isCover ?? false,
       display_order: opts.displayOrder ?? 0,
     })

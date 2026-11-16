@@ -22,6 +22,8 @@ export type ArtworkImage = {
   bytes: number | null
   is_cover: boolean
   display_order: number
+  /** #rrggbb calculado al subir; null en imágenes antiguas. */
+  dominant_color: string | null
   created_at: string
 }
 

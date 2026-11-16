@@ -85,6 +85,8 @@ Build `npm run build`, publish `dist`. En *Redirects/Rewrites* añade `/*` → `
 
 ## 6. Actualizar la aplicación
 
+> **Nunca uses las credenciales de Cloudinary de producción en local.** La prueba de `media-cleanup` borra de Cloudinary toda imagen (> 24 h) que no esté en la BD *local*: con la cuenta de producción borraría las fotos reales. En local, `supabase/functions/.env` lleva valores ficticios y las 3 pruebas reales de Cloudinary quedan omitidas. Para ejecutarlas, crea una **cuenta gratuita de Cloudinary aparte** solo para pruebas y pon sus claves en `supabase/functions/.env` y `TEST_CLOUDINARY_*`.
+
 1. Trabaja en una rama, `npm test`, `npm run test:security` (con Supabase local: `npx supabase start` + `npx supabase functions serve --env-file supabase/functions/.env`).
 2. Cambios de BD: `npx supabase migration new <nombre>`, probar con `npx supabase db reset`, luego `db push` a dev y después a prod.
 3. Merge a `main` → Cloudflare Pages despliega solo. Funciones: `npx supabase functions deploy <nombre> --no-verify-jwt`.

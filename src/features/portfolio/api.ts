@@ -2,11 +2,13 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { publicSupabase } from '../../lib/supabase'
 import type { ArtworkImage, Category, PublicArtwork } from '../../types'
 
-export const PAGE_SIZE = 12
-const LIST_COLUMNS = 'id, slug, title, price, currency, availability_status, category_id, technique, display_order, created_at'
+/** El escaparate carga todas las obras publicadas de una vez (un portafolio personal). */
+export const SHOWCASE_LIMIT = 300
+const COLUMNS =
+  'id, slug, title, description, price, currency, height, width, measurement_unit, technique, category_id, creation_date, availability_status, display_order, created_at'
+const IMAGE_COLUMNS = 'id, artwork_id, storage_path, image_alt, width, height, is_cover, display_order, dominant_color'
 
-export type ArtworkCard = PublicArtwork & { cover: ArtworkImage | null }
-export type ArtworkDetail = PublicArtwork & { images: ArtworkImage[] }
+export type ShowcaseArtwork = PublicArtwork & { cover: ArtworkImage | null }
 
 const byCoverThenOrder = (a: ArtworkImage, b: ArtworkImage) =>
   Number(b.is_cover) - Number(a.is_cover) || a.display_order - b.display_order
@@ -18,50 +20,29 @@ export function createPortfolioApi(db: SupabaseClient) {
     return data as Category[]
   }
 
-  async function listArtworks({ categorySlug, page }: { categorySlug?: string; page: number }) {
-    let query = db
+  async function listShowcase(): Promise<ShowcaseArtwork[]> {
+    const { data, error } = await db
       .from('public_artworks')
-      .select(LIST_COLUMNS)
+      .select(COLUMNS)
       .order('display_order')
       .order('created_at', { ascending: false })
-    if (categorySlug) {
-      const { data: cat } = await db.from('categories').select('id').eq('slug', categorySlug).maybeSingle()
-      if (!cat) return { items: [] as ArtworkCard[], hasMore: false }
-      query = query.eq('category_id', (cat as { id: string }).id)
-    }
-    const from = page * PAGE_SIZE
-    const { data, error } = await query.range(from, from + PAGE_SIZE) // pide 13 → sabe si hay más
+      .limit(SHOWCASE_LIMIT)
     if (error) throw error
     const rows = (data ?? []) as PublicArtwork[]
-    const pageRows = rows.slice(0, PAGE_SIZE)
+    if (!rows.length) return []
 
-    const covers = new Map<string, ArtworkImage>()
-    if (pageRows.length) {
-      const { data: imgs, error: imgError } = await db
-        .from('artwork_images')
-        .select('id, artwork_id, storage_path, image_alt, width, height, is_cover, display_order')
-        .in('artwork_id', pageRows.map((r) => r.id))
-      if (imgError) throw imgError
-      for (const img of [...((imgs ?? []) as ArtworkImage[])].sort(byCoverThenOrder))
-        if (!covers.has(img.artwork_id)) covers.set(img.artwork_id, img)
-    }
-    return {
-      items: pageRows.map((r) => ({ ...r, cover: covers.get(r.id) ?? null })),
-      hasMore: rows.length > PAGE_SIZE,
-    }
-  }
-
-  async function getArtworkBySlug(slug: string): Promise<ArtworkDetail | null> {
-    const { data, error } = await db.from('public_artworks').select('*').eq('slug', slug).maybeSingle()
-    if (error) throw error
-    if (!data) return null
-    const artwork = data as PublicArtwork
-    const { data: imgs, error: imgError } = await db.from('artwork_images').select('*').eq('artwork_id', artwork.id)
+    const { data: imgs, error: imgError } = await db
+      .from('artwork_images')
+      .select(IMAGE_COLUMNS)
+      .in('artwork_id', rows.map((r) => r.id))
     if (imgError) throw imgError
-    return { ...artwork, images: [...((imgs ?? []) as ArtworkImage[])].sort(byCoverThenOrder) }
+    const covers = new Map<string, ArtworkImage>()
+    for (const img of [...((imgs ?? []) as ArtworkImage[])].sort(byCoverThenOrder))
+      if (!covers.has(img.artwork_id)) covers.set(img.artwork_id, img)
+    return rows.map((r) => ({ ...r, cover: covers.get(r.id) ?? null }))
   }
 
-  return { listCategories, listArtworks, getArtworkBySlug }
+  return { listCategories, listShowcase }
 }
 
 export const portfolioApi = createPortfolioApi(publicSupabase)

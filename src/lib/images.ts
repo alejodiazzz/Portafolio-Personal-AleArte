@@ -1,4 +1,5 @@
 // Validación y preparación de imágenes en el navegador del administrador.
+import { dominantColor } from './color'
 
 export const MAX_INPUT_BYTES = 15 * 1024 * 1024
 export const MAX_DIMENSION = 2560
@@ -21,8 +22,8 @@ export async function validateImageFile(file: File): Promise<{ ok: true } | { ok
   return detectImageType(head) ? { ok: true } : { ok: false, reason: 'type' }
 }
 
-/** Reescala (lado mayor ≤ 2560 px) y convierte a WebP q0.9. */
-export async function prepareImage(file: File): Promise<{ blob: Blob; width: number; height: number }> {
+/** Reescala (lado mayor ≤ 2560 px), convierte a WebP q0.9 y calcula el color de fondo del escaparate. */
+export async function prepareImage(file: File): Promise<{ blob: Blob; width: number; height: number; color: string }> {
   const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
   const scale = Math.min(1, MAX_DIMENSION / Math.max(bitmap.width, bitmap.height))
   const width = Math.round(bitmap.width * scale)
@@ -37,5 +38,17 @@ export async function prepareImage(file: File): Promise<{ blob: Blob; width: num
   bitmap.close()
   const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/webp', WEBP_QUALITY))
   if (!blob || blob.type !== 'image/webp') throw new Error('El navegador no pudo convertir a WebP')
-  return { blob, width, height }
+  return { blob, width, height, color: colorOf(canvas) }
+}
+
+/** Color dominante sobre una miniatura de 64 px (rápido y suficiente). */
+function colorOf(source: HTMLCanvasElement): string {
+  const scale = 64 / Math.max(source.width, source.height)
+  const small = document.createElement('canvas')
+  small.width = Math.max(1, Math.round(source.width * scale))
+  small.height = Math.max(1, Math.round(source.height * scale))
+  const ctx = small.getContext('2d', { willReadFrequently: true })
+  if (!ctx) return dominantColor(new Uint8ClampedArray())
+  ctx.drawImage(source, 0, 0, small.width, small.height)
+  return dominantColor(ctx.getImageData(0, 0, small.width, small.height).data)
 }

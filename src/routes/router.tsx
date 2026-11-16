@@ -1,7 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Link } from 'react-router-dom'
-import { ArtworkPage } from '../features/portfolio/ArtworkPage'
-import { PortfolioPage } from '../features/portfolio/PortfolioPage'
+import { ShowcasePage } from '../features/portfolio/ShowcasePage'
 
 // El panel se carga aparte: los visitantes no descargan su código.
 const AdminApp = lazy(() => import('../features/admin/AdminApp'))
@@ -16,8 +15,8 @@ function NotFound() {
 }
 
 export const router = createBrowserRouter([
-  { path: '/', element: <PortfolioPage /> },
-  { path: '/obra/:slug', element: <ArtworkPage /> },
+  { path: '/', element: <ShowcasePage /> },
+  { path: '/obra/:slug', element: <ShowcasePage /> },
   {
     path: '/admin/*',
     element: (
