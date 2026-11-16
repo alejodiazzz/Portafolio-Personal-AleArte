@@ -5,8 +5,10 @@ import { supabase } from './supabase'
 type Signature = { cloudName: string; apiKey: string; timestamp: number; publicId: string; signature: string; allowedFormats: string }
 
 export class UploadValidationError extends Error {
-  constructor(public reason: 'type' | 'size') {
+  readonly reason: 'type' | 'size'
+  constructor(reason: 'type' | 'size') {
     super(reason === 'type' ? 'Formato no permitido (usa JPG, PNG o WebP)' : 'La imagen supera 15 MB')
+    this.reason = reason
   }
 }
 
