@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ale Arte · Escaparate (prototipo)</title>
+<!--
+  PROTOTIPO DE DISEÑO — no es la web real.
+  Supuestos:
+  - Datos e imágenes reales de producción (4 obras). Textos de prueba tal como están en el panel.
+  - Color de fondo elegido a mano por obra; en la web real se calculará al subir la foto (color dominante, luminosidad acotada).
+  - "Arte hecho a mano" es un lema provisional. La firma/logo llegará después (por ahora, texto).
+  - Variantes: A fiel a la referencia · B galería · C editorial. Cambia con el selector abajo a la derecha o las teclas 1/2/3.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..600&family=Manrope:wght@400;500;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#6E9C8E; --ink:#fff; --ink-soft:rgba(255,255,255,.72); --line:rgba(255,255,255,.22); --glass:rgba(255,255,255,.14);
+  --display:'Outfit',sans-serif; --body:'Outfit',sans-serif;
+  --ease:cubic-bezier(.16,1,.3,1);
+}
+[data-variant="B"],[data-variant="C"]{--display:'Fraunces',serif; --body:'Manrope',sans-serif}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);transition:background-color .9s var(--ease),color .6s;overflow:hidden;-webkit-font-smoothing:antialiased}
+body.light{--ink:#1d1a17;--ink-soft:rgba(29,26,23,.68);--line:rgba(29,26,23,.18);--glass:rgba(255,255,255,.35)}
+/* Variante C: degradado + grano sobre el color base (el color base sí transiciona) */
+.atmos{position:fixed;inset:0;pointer-events:none;opacity:0;transition:opacity .6s}
+[data-variant="C"] .atmos{opacity:1;background:radial-gradient(120% 90% at 50% 40%,rgba(255,255,255,.16),transparent 55%),radial-gradient(90% 70% at 50% 110%,rgba(0,0,0,.35),transparent 70%)}
+[data-variant="C"] .atmos::after{content:"";position:absolute;inset:0;opacity:.09;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+.stage{position:relative;height:100dvh;display:grid;grid-template-columns:minmax(260px,1fr) minmax(0,1.25fr) minmax(220px,1fr);grid-template-rows:auto 1fr auto;padding:28px clamp(20px,4vw,56px);gap:0 clamp(16px,3vw,48px)}
+header{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{font-family:var(--display);font-size:20px;letter-spacing:.02em;font-weight:500;white-space:nowrap}
+[data-variant="A"] .brand{text-transform:uppercase;letter-spacing:.18em;font-size:15px;font-weight:600}
+.pills{display:flex;gap:4px;padding:5px;border-radius:999px;background:var(--glass);backdrop-filter:blur(14px);overflow-x:auto;scrollbar-width:none}
+.pills button{all:unset;cursor:pointer;padding:8px 14px;border-radius:999px;font-size:13px;font-weight:500;white-space:nowrap;color:var(--ink-soft);transition:background .3s,color .3s}
+.pills button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.pills button:focus-visible,.icon-btn:focus-visible,.cta:focus-visible,.next:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.icon-btn{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:500;padding:9px 14px;border-radius:999px;border:1px solid var(--line)}
+
+.info{grid-column:1;grid-row:2;align-self:center;max-width:380px}
+.nav{display:flex;align-items:center;gap:12px;margin-bottom:22px;font-variant-numeric:tabular-nums;font-size:13px;color:var(--ink-soft)}
+.arrow{all:unset;cursor:pointer;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-size:15px;color:var(--ink)}
+.arrow:hover{background:var(--glass)}
+h1{font-family:var(--display);font-weight:500;font-size:clamp(34px,4.2vw,60px);line-height:1.02;letter-spacing:-.02em;text-wrap:balance}
+[data-variant="B"] h1,[data-variant="C"] h1{font-weight:400;letter-spacing:-.01em}
+.tech{margin-top:10px;font-size:14px;color:var(--ink-soft)}
+[data-variant="B"] .tech,[data-variant="C"] .tech{font-family:'Fraunces',serif;font-style:italic;font-size:17px}
+.desc{margin-top:18px;font-size:14px;line-height:1.6;color:var(--ink-soft);text-wrap:pretty;max-width:34ch}
+.cta{display:inline-flex;align-items:center;gap:10px;margin-top:28px;padding:13px 22px;border-radius:999px;background:var(--ink);color:var(--bg);font-weight:600;font-size:14px;text-decoration:none;transition:transform .3s var(--ease)}
+.cta:hover{transform:translateY(-2px)}
+
+.art{grid-column:2;grid-row:2;position:relative;display:grid;place-items:center;min-height:0}
+.piece{position:absolute;inset:0;display:grid;place-items:center;padding:4% 0}
+.piece figure{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+.piece img{display:block;max-width:100%;max-height:min(100%,calc(100dvh - 300px));object-fit:contain;box-shadow:0 40px 60px -30px rgba(0,0,0,.55),0 10px 20px -10px rgba(0,0,0,.35)}
+[data-variant="A"] .piece img{border-radius:2px}
+[data-variant="B"] .piece img{padding:clamp(10px,1.6vw,22px);background:#f6f2ea;box-shadow:0 0 0 1px rgba(0,0,0,.08),0 40px 60px -30px rgba(0,0,0,.6)}
+[data-variant="C"] .piece img{border:6px solid #1b1714;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 40px 60px -28px rgba(0,0,0,.65)}
+.piece.in{animation:arcIn 1s var(--ease) both}
+.piece.out{animation:arcOut .7s cubic-bezier(.7,0,.84,0) both}
+.piece.in.back{animation-name:arcInBack}.piece.out.back{animation-name:arcOutBack}
+@keyframes arcIn{from{opacity:0;transform:translate(18%,-70%) rotate(8deg) scale(.82)}to{opacity:1;transform:none}}
+@keyframes arcOut{to{opacity:0;transform:translate(-14%,60%) rotate(-6deg) scale(.86)}}
+@keyframes arcInBack{from{opacity:0;transform:translate(-18%,70%) rotate(-8deg) scale(.82)}to{opacity:1;transform:none}}
+@keyframes arcOutBack{to{opacity:0;transform:translate(14%,-60%) rotate(6deg) scale(.86)}}
+.shadow{position:absolute;bottom:2%;width:46%;height:18px;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.35),transparent);filter:blur(4px)}
+[data-variant="B"] .shadow,[data-variant="C"] .shadow{display:none}
+
+.side{grid-column:3;grid-row:2;align-self:center;justify-self:end;text-align:right}
+.price{font-family:var(--display);font-size:clamp(28px,3vw,44px);font-weight:500;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.price small{font-size:.4em;font-family:var(--body);font-weight:500;color:var(--ink-soft);margin-left:6px}
+.status{display:inline-flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:var(--ink-soft)}
+.status i{width:7px;height:7px;border-radius:50%;background:currentColor}
+.status.available i{background:#7CE3A1}
+dl{margin-top:28px;display:grid;gap:14px}
+dt{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft)}
+dd{font-size:15px;margin-top:3px}
+
+footer{grid-column:1/-1;display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:16px}
+.social{display:flex;gap:16px;font-size:13px}
+.social a{color:var(--ink-soft);text-decoration:none}.social a:hover{color:var(--ink)}
+.motto{text-align:center;font-size:13px;color:var(--ink-soft);line-height:1.4}
+[data-variant="B"] .motto,[data-variant="C"] .motto{font-family:'Fraunces',serif;font-style:italic;font-size:15px}
+.next{all:unset;cursor:pointer;justify-self:end;display:flex;align-items:center;gap:12px;font-size:12px;color:var(--ink-soft)}
+.next img{width:56px;height:56px;object-fit:cover;border-radius:6px;box-shadow:0 8px 18px -8px rgba(0,0,0,.5);transition:transform .4s var(--ease)}
+.next:hover img{transform:translateY(-3px) rotate(-3deg)}
+
+/* Índice */
+.index{position:fixed;inset:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,#000);backdrop-filter:blur(8px);padding:28px clamp(20px,4vw,56px);overflow:auto;opacity:0;visibility:hidden;transition:opacity .4s,visibility .4s}
+.index.open{opacity:1;visibility:visible}
+.index-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+.index-head h2{font-family:var(--display);font-weight:500;font-size:28px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:28px}
+.grid button{all:unset;cursor:pointer;display:grid;gap:10px}
+.grid img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:4px;transition:transform .4s var(--ease)}
+.grid button:hover img{transform:scale(1.03)}
+.grid span{font-size:14px}.grid small{font-size:12px;color:var(--ink-soft)}
+
+/* Selector de variantes (solo prototipo) */
+.tweaks{position:fixed;right:16px;top:84px;z-index:30;display:flex;gap:4px;padding:4px;border-radius:10px;background:#111;font:12px/1 system-ui,sans-serif}
+.tweaks button{all:unset;cursor:pointer;color:#aaa;padding:8px 10px;border-radius:7px}
+.tweaks button[aria-pressed="true"]{background:#fff;color:#111}
+
+@media (max-width:820px){
+  body{overflow:auto}
+  .stage{height:auto;min-height:100dvh;grid-template-columns:minmax(0,1fr);grid-template-rows:auto;padding:16px 16px 96px;gap:0}
+  header{flex-wrap:wrap}
+  .pills{order:3;width:100%;margin-top:12px}
+  .art{grid-column:1;grid-row:auto;height:50dvh;margin:16px 0 8px}
+  .piece img{max-height:48dvh}
+  .info,.side{grid-column:1;grid-row:auto;max-width:none}
+  .side{justify-self:stretch;text-align:left;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px;margin-top:18px}
+  .side dl{grid-template-columns:repeat(3,auto);justify-content:start;gap:16px;margin-top:10px;width:100%}
+  .nav{margin:4px 0 14px}
+  .cta{position:fixed;left:16px;right:16px;bottom:16px;justify-content:center;margin:0;z-index:10;box-shadow:0 10px 30px -10px rgba(0,0,0,.5)}
+  footer{grid-template-columns:1fr;justify-items:start;margin-top:28px}
+  .motto{text-align:left}.next{justify-self:start}
+  .tweaks{position:static;margin:0 16px 96px;justify-content:center}
+  header{order:-2}.art{order:-1}.pills{order:3}
+}
+@media (prefers-reduced-motion:reduce){
+  .piece.in,.piece.out{animation:fade .4s both}.piece.out{animation-direction:reverse}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  body{transition:none}
+}
+</style>
+</head>
+<body data-variant="B">
+<div class="atmos" aria-hidden="true"></div>
+<div class="stage">
+  <header>
+    <div class="brand">Ale Arte</div>
+    <nav class="pills" aria-label="Categorías" id="pills"></nav>
+    <button class="icon-btn" id="openIndex" aria-haspopup="dialog">☰ Índice</button>
+  </header>
+
+  <section class="info" aria-live="polite">
+    <div class="nav">
+      <button class="arrow" id="prev" aria-label="Obra anterior">←</button>
+      <button class="arrow" id="next" aria-label="Obra siguiente">→</button>
+      <span id="counter"></span>
+    </div>
+    <h1 id="title"></h1>
+    <p class="tech" id="tech"></p>
+    <p class="desc" id="desc"></p>
+    <a class="cta" id="cta" target="_blank" rel="noopener">Lo quiero <span aria-hidden="true">→</span></a>
+  </section>
+
+  <div class="art" id="art"></div>
+
+  <aside class="side">
+    <div class="price" id="price"></div>
+    <div class="status" id="status"><i></i><span></span></div>
+    <dl>
+      <div><dt>Medidas</dt><dd id="size"></dd></div>
+      <div><dt>Categoría</dt><dd id="cat"></dd></div>
+    </dl>
+  </aside>
+
+  <footer>
+    <div class="social"><a href="https://instagram.com/ale._.arte" target="_blank" rel="noopener">Instagram</a><a id="wa" target="_blank" rel="noopener">WhatsApp</a></div>
+    <p class="motto">Arte hecho a mano,<br>pensado para quedarse.</p>
+    <button class="next" id="nextThumb"><span>Siguiente</span><img alt=""></button>
+  </footer>
+</div>
+
+<div class="index" id="index" role="dialog" aria-modal="true" aria-label="Índice de obras">
+  <div class="index-head"><h2>Todas las obras</h2><button class="icon-btn" id="closeIndex">Cerrar ✕</button></div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<div class="tweaks" role="group" aria-label="Variante de diseño">
+  <button data-v="A">A · Referencia</button><button data-v="B">B · Galería</button><button data-v="C">C · Editorial</button>
+</div>
+
+<script>
+const CLD='https://res.cloudinary.com/dzjj3tby3/image/upload/';
+const img=(p,w)=>`${CLD}f_auto,q_auto,c_limit,w_${w}/${p}`;
+// Datos reales de producción. bg = color elegido a mano (en la web real: calculado al subir).
+const WORKS=[
+ {slug:'retrato-de-bebe-en-pijama',title:'Retrato de bebé en pijama',tech:'Pinceladas sueltas',desc:'Retrato de un bebé con pijama de mariposas.',cat:'Pinturas acrílicas',status:'commission',price:null,size:'23 × 20 cm',bg:'#7FA898',p:'ale-arte/artworks/46493dde-62fc-460b-a65d-d12db683f666/589f0562-2672-4ce7-a296-06105471da12'},
+ {slug:'bebe-2',title:'Bebe 2',tech:'shdkhj',desc:'',cat:'Pinturas acrílicas',status:'commission',price:null,size:'37 × 29 cm',bg:'#1F3B7A',p:'ale-arte/artworks/9885ff44-6540-4b5d-ba80-81beb8383463/57d7165f-2b20-402a-996c-c7ed207861ca'},
+ {slug:'periito',title:'periito',tech:'lapix',desc:'',cat:'Retratos a lápiz',status:'available',price:78939,size:'36 × 23 cm',bg:'#2A2A2C',p:'ale-arte/artworks/94639af1-db26-4791-8e78-5b94bd85853f/0d6833f6-d50f-49dd-9a37-bbf693e27b8a'},
+ {slug:'mural-chita',title:'Mural chita',tech:'vivnilo',desc:'',cat:'Murales',status:'commission',price:null,size:'60 × 100 cm',bg:'#6E3B27',p:'ale-arte/artworks/ef51cacb-c2dc-49e4-b1ba-7c3a31b4f99c/61c8987c-e503-4d31-8bd5-3bdc037b469e'},
+];
+const CATS=['Todas','Retratos a lápiz','Pinturas acrílicas','Murales','Retratos de mascotas','Otros proyectos'];
+const WA='573219038353';
+const $=id=>document.getElementById(id);
+let cat='Todas',list=WORKS,i=0,busy=false;
+
+const lum=h=>{const n=parseInt(h.slice(1),16),c=[n>>16,n>>8&255,n&255].map(v=>{v/=255;return v<=.03928?v/12.92:((v+.055)/1.055)**2.4});return .2126*c[0]+.7152*c[1]+.0722*c[2]};
+const priceLabel=w=>w.status==='sold'?'Vendida':w.status==='commission'?'Cotiza la tuya':w.price==null?'Precio a consultar':'$ '+w.price.toLocaleString('es-CO');
+const statusLabel={available:'Disponible',sold:'Vendida',commission:'Por encargo'};
+
+function renderPills(){
+  $('pills').innerHTML=CATS.map(c=>`<button aria-pressed="${c===cat}">${c}</button>`).join('');
+  [...$('pills').children].forEach(b=>b.onclick=()=>setCat(b.textContent));
+}
+function setCat(c){
+  const l=c==='Todas'?WORKS:WORKS.filter(w=>w.cat===c);
+  if(!l.length){flash('Aún no hay obras en '+c);return}
+  cat=c;list=l;renderPills();show(0,1,true);
+}
+function flash(t){$('counter').textContent=t;setTimeout(()=>$('counter').textContent=count(),1600)}
+const count=()=>`${String(i+1).padStart(2,'0')} / ${String(list.length).padStart(2,'0')}`;
+
+function show(n,dir=1,force=false){
+  if(busy&&!force)return;
+  n=(n+list.length)%list.length;
+  if(n===i&&!force)return;
+  i=n;const w=list[i];busy=true;setTimeout(()=>busy=false,650);
+  document.body.style.setProperty('--bg',w.bg);
+  document.body.classList.toggle('light',lum(w.bg)>.45);
+  const art=$('art'),back=dir<0?' back':'';
+  [...art.children].forEach(el=>{el.className='piece out'+back;setTimeout(()=>el.remove(),700)});
+  const el=document.createElement('div');el.className='piece in'+back;
+  el.innerHTML=`<figure><img src="${img(w.p,1600)}" srcset="${img(w.p,800)} 800w, ${img(w.p,1600)} 1600w" sizes="(max-width:820px) 92vw, 40vw" alt="${w.title}, ${w.tech}"></figure><div class="shadow"></div>`;
+  art.appendChild(el);
+  $('title').textContent=w.title;$('tech').textContent=w.tech;
+  $('desc').textContent=w.desc;$('desc').hidden=!w.desc;
+  $('price').innerHTML=w.status==='available'&&w.price!=null?`${priceLabel(w)}<small>COP</small>`:priceLabel(w);
+  $('status').className='status '+w.status;$('status').querySelector('span').textContent=statusLabel[w.status];
+  $('size').textContent=w.size;$('cat').textContent=w.cat;$('counter').textContent=count();
+  const msg=encodeURIComponent(`Hola Ale, me interesa la obra "${w.title}": https://portafolio-personal-alearte.diaza-alejandro123.workers.dev/obra/${w.slug}`);
+  $('cta').href=$('wa').href=`https://wa.me/${WA}?text=${msg}`;
+  $('cta').firstChild.textContent=w.status==='commission'?'Cotiza la tuya ':'Lo quiero ';
+  const nx=list[(i+1)%list.length];$('nextThumb').querySelector('img').src=img(nx.p,200);
+  history.replaceState(null,'','#obra/'+w.slug);
+  new Image().src=img(nx.p,1600); // precarga
+}
+
+$('prev').onclick=()=>show(i-1,-1);$('next').onclick=()=>show(i+1,1);$('nextThumb').onclick=()=>show(i+1,1);
+addEventListener('keydown',e=>{
+  if($('index').classList.contains('open')){if(e.key==='Escape')toggleIndex(false);return}
+  if(e.key==='ArrowRight')show(i+1,1);if(e.key==='ArrowLeft')show(i-1,-1);
+  if('123'.includes(e.key))setVariant('ABC'['123'.indexOf(e.key)]);
+});
+let wheelLock=0;addEventListener('wheel',e=>{if(innerWidth<=820||Date.now()<wheelLock||Math.abs(e.deltaY)<30)return;wheelLock=Date.now()+900;show(i+(e.deltaY>0?1:-1),e.deltaY>0?1:-1)},{passive:true});
+let tx=null;$('art').addEventListener('touchstart',e=>tx=e.touches[0].clientX,{passive:true});
+$('art').addEventListener('touchend',e=>{if(tx==null)return;const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50)show(i+(d<0?1:-1),d<0?1:-1);tx=null});
+
+function toggleIndex(open){
+  $('index').classList.toggle('open',open);
+  if(open){$('grid').innerHTML=list.map((w,k)=>`<button data-k="${k}"><img src="${img(w.p,400)}" alt=""><span>${w.title}</span><small>${w.cat} · ${priceLabel(w)}</small></button>`).join('');
+    [...$('grid').children].forEach(b=>b.onclick=()=>{toggleIndex(false);show(+b.dataset.k,1)});$('closeIndex').focus()}
+  else $('openIndex').focus();
+}
+$('openIndex').onclick=()=>toggleIndex(true);$('closeIndex').onclick=()=>toggleIndex(false);
+
+function setVariant(v){document.body.dataset.variant=v;document.querySelectorAll('.tweaks button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v));try{localStorage.setItem('aa-variant',v)}catch{}}
+document.querySelectorAll('.tweaks button').forEach(b=>b.onclick=()=>setVariant(b.dataset.v));
+let saved='B';try{saved=localStorage.getItem('aa-variant')||'B'}catch{}
+setVariant(new URLSearchParams(location.search).get('v')||saved);
+
+renderPills();
+const start=Math.max(0,WORKS.findIndex(w=>location.hash==='#obra/'+w.slug));
+i=-1;show(start,1,true);
+</script>
+</body>
+</html>
