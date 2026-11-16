@@ -1,0 +1,115 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { reorder, type Direction } from '../../lib/order'
+import { supabase } from '../../lib/supabase'
+import { uploadArtworkImage } from '../../lib/upload'
+import type { Artwork, ArtworkImage, AvailabilityStatus, Category, PublicationStatus } from '../../types'
+import { artworkInputSchema, categoryInputSchema, type ArtworkInput, type CategoryInput } from './schema'
+
+export function createAdminApi(db: SupabaseClient) {
+  const check = <T>(r: { data: T | null; error: unknown }): T => {
+    if (r.error) throw r.error
+    return r.data as T
+  }
+
+  // ── Obras ──
+  const adminListArtworks = async () =>
+    check(await db.from('artworks').select('*').order('display_order').order('created_at', { ascending: false })) as Artwork[]
+
+  const adminGetArtwork = async (id: string) => {
+    const artwork = check(await db.from('artworks').select('*').eq('id', id).maybeSingle()) as Artwork | null
+    if (!artwork) return null
+    const images = check(await db.from('artwork_images').select('*').eq('artwork_id', id).order('display_order')) as ArtworkImage[]
+    return { artwork, images }
+  }
+
+  const createArtwork = async (input: ArtworkInput) =>
+    check(await db.from('artworks').insert(artworkInputSchema.parse(input)).select('*').single()) as Artwork
+
+  const updateArtwork = async (id: string, input: ArtworkInput) =>
+    check(await db.from('artworks').update(artworkInputSchema.parse(input)).eq('id', id).select('*').single()) as Artwork
+
+  /** Borra BD + Cloudinary en el servidor (evita huérfanos). */
+  const deleteArtwork = async (id: string) => {
+    const { error } = await db.functions.invoke('media-delete', { body: { artworkId: id } })
+    if (error) throw error
+  }
+
+  const setPublication = async (id: string, publication_status: PublicationStatus) => {
+    check(await db.from('artworks').update({ publication_status }).eq('id', id).select('id'))
+  }
+  const setAvailability = async (id: string, availability_status: AvailabilityStatus) => {
+    check(await db.from('artworks').update({ availability_status }).eq('id', id).select('id'))
+  }
+
+  const applyOrder = async (table: string, rows: { id: string; display_order: number }[]) => {
+    for (const r of rows) check(await db.from(table).update({ display_order: r.display_order }).eq('id', r.id).select('id'))
+  }
+
+  const moveArtwork = async (id: string, dir: Direction) => {
+    const list = await adminListArtworks()
+    await applyOrder('artworks', reorder(list.map((a) => a.id), id, dir))
+  }
+
+  const takenSlugs = async () => (check(await db.from('artworks').select('slug')) as { slug: string }[]).map((r) => r.slug)
+
+  // ── Imágenes ──
+  const uploadImage = (artworkId: string, file: File, alt: string, opts?: { isCover?: boolean; displayOrder?: number }) =>
+    uploadArtworkImage(artworkId, file, alt, opts)
+
+  const setCover = async (imageId: string) => {
+    const img = check(await db.from('artwork_images').select('id, artwork_id').eq('id', imageId).single()) as { artwork_id: string }
+    // Primero desmarcar (índice único parcial: una portada por obra)
+    check(await db.from('artwork_images').update({ is_cover: false }).eq('artwork_id', img.artwork_id).eq('is_cover', true).select('id'))
+    check(await db.from('artwork_images').update({ is_cover: true }).eq('id', imageId).select('id'))
+  }
+
+  const updateImageAlt = async (imageId: string, image_alt: string) => {
+    check(await db.from('artwork_images').update({ image_alt: image_alt.trim().slice(0, 250) || null }).eq('id', imageId).select('id'))
+  }
+
+  const deleteImage = async (imageId: string) => {
+    const { error } = await db.functions.invoke('media-delete', { body: { imageId } })
+    if (error) throw error
+  }
+
+  const moveImage = async (imageId: string, dir: Direction) => {
+    const img = check(await db.from('artwork_images').select('artwork_id').eq('id', imageId).single()) as { artwork_id: string }
+    const list = check(await db.from('artwork_images').select('id').eq('artwork_id', img.artwork_id).order('display_order')) as { id: string }[]
+    await applyOrder('artwork_images', reorder(list.map((i) => i.id), imageId, dir))
+  }
+
+  /** Sube la nueva, conserva alt/orden/portada y luego borra la anterior. */
+  const replaceImage = async (imageId: string, file: File) => {
+    const old = check(await db.from('artwork_images').select('*').eq('id', imageId).single()) as ArtworkImage
+    if (old.is_cover) check(await db.from('artwork_images').update({ is_cover: false }).eq('id', imageId).select('id'))
+    const created = await uploadArtworkImage(old.artwork_id, file, old.image_alt ?? '', {
+      isCover: old.is_cover,
+      displayOrder: old.display_order,
+    })
+    await deleteImage(imageId)
+    return created
+  }
+
+  // ── Categorías ──
+  const listCategories = async () => check(await db.from('categories').select('*').order('display_order').order('name')) as Category[]
+  const createCategory = async (input: CategoryInput) =>
+    check(await db.from('categories').insert(categoryInputSchema.parse(input)).select('*').single()) as Category
+  const updateCategory = async (id: string, input: CategoryInput) =>
+    check(await db.from('categories').update(categoryInputSchema.parse(input)).eq('id', id).select('*').single()) as Category
+  const deleteCategory = async (id: string) => {
+    const rows = check(await db.from('categories').delete().eq('id', id).select('id')) as unknown[]
+    if (!rows.length) throw { status: 403 }
+  }
+  const moveCategory = async (id: string, dir: Direction) => {
+    const list = await listCategories()
+    await applyOrder('categories', reorder(list.map((c) => c.id), id, dir))
+  }
+
+  return {
+    adminListArtworks, adminGetArtwork, createArtwork, updateArtwork, deleteArtwork, setPublication, setAvailability,
+    moveArtwork, takenSlugs, uploadImage, setCover, updateImageAlt, deleteImage, moveImage, replaceImage,
+    listCategories, createCategory, updateCategory, deleteCategory, moveCategory,
+  }
+}
+
+export const adminApi = createAdminApi(supabase)
