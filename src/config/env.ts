@@ -1,14 +1,25 @@
-import { z } from 'zod'
+// Validación sin dependencias (zod no entra al bundle público).
+type Rule = (v: string) => string | null
+const isUrl: Rule = (v) => {
+  try {
+    const u = new URL(v)
+    return u.protocol === 'https:' || u.protocol === 'http:' ? null : 'URL inválida'
+  } catch {
+    return 'URL inválida'
+  }
+}
+const nonEmpty: Rule = (v) => (v.trim() ? null : 'requerido')
+const pattern = (re: RegExp, msg: string): Rule => (v) => (re.test(v) ? null : msg)
 
-const schema = z.object({
-  VITE_SUPABASE_URL: z.url(),
-  VITE_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
-  VITE_CLOUDINARY_CLOUD_NAME: z.string().regex(/^[a-z0-9_-]+$/i),
-  VITE_TURNSTILE_SITE_KEY: z.string().min(1),
-  VITE_WHATSAPP_NUMBER: z.string().regex(/^\d{8,15}$/, 'solo dígitos con código de país, sin +'),
-  VITE_INSTAGRAM_URL: z.url(),
-  VITE_SITE_URL: z.url(),
-})
+const RULES: Record<string, Rule> = {
+  VITE_SUPABASE_URL: isUrl,
+  VITE_SUPABASE_PUBLISHABLE_KEY: nonEmpty,
+  VITE_CLOUDINARY_CLOUD_NAME: pattern(/^[a-z0-9_-]+$/i, 'nombre inválido'),
+  VITE_TURNSTILE_SITE_KEY: nonEmpty,
+  VITE_WHATSAPP_NUMBER: pattern(/^\d{8,15}$/, 'solo dígitos con código de país, sin +'),
+  VITE_INSTAGRAM_URL: isUrl,
+  VITE_SITE_URL: isUrl,
+}
 
 export type Env = {
   supabaseUrl: string
@@ -21,12 +32,14 @@ export type Env = {
 }
 
 export function parseEnv(raw: Record<string, string | undefined>): Env {
-  const result = schema.safeParse(raw)
-  if (!result.success) {
-    const vars = result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')
-    throw new Error(`Configuración de entorno inválida → ${vars}`)
-  }
-  const e = result.data
+  const problems = Object.entries(RULES).flatMap(([k, rule]) => {
+    const v = raw[k]
+    if (v === undefined || v === '') return [`${k}: requerido`]
+    const msg = rule(v)
+    return msg ? [`${k}: ${msg}`] : []
+  })
+  if (problems.length) throw new Error(`Configuración de entorno inválida → ${problems.join('; ')}`)
+  const e = raw as Record<string, string>
   return {
     supabaseUrl: e.VITE_SUPABASE_URL,
     supabasePublishableKey: e.VITE_SUPABASE_PUBLISHABLE_KEY,
