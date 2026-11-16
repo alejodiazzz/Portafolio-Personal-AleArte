@@ -1,0 +1,11 @@
+// Cloudflare Workers (archivos estáticos). El nombre debe coincidir con el proyecto en Cloudflare.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "portafolio-personal-alearte",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./dist",
+    // Rutas de la SPA (/obra/..., /admin/...) devuelven index.html
+    "not_found_handling": "single-page-application"
+  }
+}

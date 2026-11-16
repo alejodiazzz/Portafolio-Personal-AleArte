@@ -52,12 +52,21 @@ Después configura Auth y crea el administrador según [setup-auth.md](setup-aut
 2. Settings → Security: activa **“Strict transformations”** solo si notas abuso. Los tamaños 400/800/1600 del sitio se generan bajo demanda y quedan en caché.
 3. Las imágenes viven en la carpeta `ale-arte/artworks/<id-obra>/`.
 
-## 4. Cloudflare Pages
+## 4. Cloudflare (Workers con archivos estáticos — configuración actual)
+
+El proyecto se despliega como **Worker** `portafolio-personal-alearte` (Workers Builds conectado a GitHub, rama `main`):
+
+- `wrangler.jsonc` define el Worker: sirve `dist/` y activa `not_found_handling: "single-page-application"` (rutas `/obra/...` y `/admin/...` → `index.html`). **No** usar `_redirects` con `/* /index.html 200`: Workers lo rechaza como bucle.
+- `dist/_headers` (CSP, HSTS, caché) se genera en el build y Workers lo aplica.
+- Build command `npm run build`; deploy command `npx wrangler deploy`.
+- Variables `VITE_*` y `NODE_VERSION` en **Settings → Build → Build variables and secrets** (no en las variables de runtime, que Vite no ve).
+
+### Alternativa: Cloudflare Pages
 
 1. Workers & Pages → Create → Pages → conecta el repositorio de GitHub.
 2. Framework preset: *None* (o Vite). Build command: `npm run build`. Output: `dist`.
 3. Variables de entorno de la sección 1 (Production y Preview).
-4. Despliega. `dist/_headers` (CSP y caché) y `dist/_redirects` (rutas de la SPA) se generan en el build.
+4. Despliega. `dist/_headers` (CSP y caché) se genera en el build. Para rutas de la SPA en Pages crea `public/_redirects` con `/* /index.html 200`.
 5. Turnstile: añade el dominio `<proyecto>.pages.dev` (y tu dominio propio) al widget.
 6. Supabase Auth → URL Configuration: Site URL y Redirect URLs = URL del sitio.
 
