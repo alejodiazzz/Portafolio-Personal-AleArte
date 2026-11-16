@@ -49,10 +49,10 @@ Totales: **unitarias 93/93**, **seguridad 43 pasan, 3 omitidas** (requieren cred
 
 ## Pendiente de verificar en la nube (requiere las cuentas del propietario)
 
-- P1. Flujo real con Cloudinary: subir, borrar, rechazo de firma manipulada y barrido de huérfanos (3 pruebas listas, se activan con credenciales).
-- P2. Turnstile en el login (proyecto dev con claves de prueba; prod con claves reales).
-- P3. CORS de las funciones y cabeceras `_headers` en Cloudflare Pages (`curl -I`).
-- P4. `db advisors --linked` en dev y prod.
+- ~~P1. Flujo real con Cloudinary~~ ✅ 2026-11-16: 46/46 pruebas (subida firmada, borrado de obra + recurso, firma manipulada rechazada, barrido). `media-cleanup` en prod → `{"checked":0,"deleted":0}`.
+- P2. Turnstile en el login (prod con claves reales).
+- P3. ~~CORS de las funciones~~ ✅ verificado en prod (origen ajeno sin cabecera; `ale-arte.pages.dev` permitido). Pendiente: cabeceras `_headers` en Cloudflare Pages (`curl -I`).
+- P4. ~~`db advisors` en prod~~ ✅ sin errores ni advertencias. Registro deshabilitado y escritura anónima bloqueada verificados en prod.
 - P5. Rate limit de Auth tras varios intentos fallidos.
 
 ## Riesgos residuales
