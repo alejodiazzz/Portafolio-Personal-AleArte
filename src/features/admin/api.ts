@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { reorder, type Direction } from '../../lib/order'
 import { supabase } from '../../lib/supabase'
 import { uploadArtworkImage } from '../../lib/upload'
-import type { Artwork, ArtworkImage, AvailabilityStatus, Category, PublicationStatus } from '../../types'
+import type { Artwork, ArtworkImage, Auction, AuctionBid, AvailabilityStatus, Category, PublicationStatus } from '../../types'
 import { artworkInputSchema, categoryInputSchema, type ArtworkInput, type CategoryInput } from './schema'
 
 export function createAdminApi(db: SupabaseClient) {
@@ -50,6 +50,14 @@ export function createAdminApi(db: SupabaseClient) {
     await applyOrder('artworks', reorder(list.map((a) => a.id), id, dir))
   }
 
+  /** Portada (o primera imagen) de cada obra, para las miniaturas de la lista. */
+  const listCovers = async () => {
+    const rows = check(await db.from('artwork_images').select('artwork_id, storage_path, is_cover, display_order')) as Pick<ArtworkImage, 'artwork_id' | 'storage_path' | 'is_cover' | 'display_order'>[]
+    rows.sort((a, b) => Number(b.is_cover) - Number(a.is_cover) || a.display_order - b.display_order)
+    const map = new Map<string, string>()
+    for (const r of rows) if (!map.has(r.artwork_id)) map.set(r.artwork_id, r.storage_path)
+    return map
+  }
   const takenSlugs = async () => (check(await db.from('artworks').select('slug')) as { slug: string }[]).map((r) => r.slug)
 
   // ── Imágenes ──
@@ -105,7 +113,29 @@ export function createAdminApi(db: SupabaseClient) {
     await applyOrder('categories', reorder(list.map((c) => c.id), id, dir))
   }
 
+  // ── Subastas ──
+  type AuctionConfig = Pick<Auction, 'starting_price' | 'min_increment' | 'ends_at' | 'is_active'>
+  const getAuction = async (artworkId: string) =>
+    check(await db.from('auctions').select('*').eq('artwork_id', artworkId).maybeSingle()) as Auction | null
+  /** Solo columnas configurables: el monto actual y el conteo los maneja la base. */
+  const saveAuction = async (artworkId: string, c: AuctionConfig) => {
+    const cfg = { starting_price: c.starting_price, min_increment: c.min_increment, ends_at: c.ends_at, is_active: c.is_active }
+    const exists = check(await db.from('auctions').select('artwork_id').eq('artwork_id', artworkId).maybeSingle())
+    if (exists) check(await db.from('auctions').update(cfg).eq('artwork_id', artworkId).select('artwork_id'))
+    else check(await db.from('auctions').insert({ artwork_id: artworkId, ...cfg }).select('artwork_id'))
+  }
+  const deleteAuction = async (artworkId: string) => {
+    check(await db.from('auctions').delete().eq('artwork_id', artworkId).select('artwork_id'))
+  }
+  const listBids = async (artworkId: string) =>
+    check(await db.from('auction_bids').select('*').eq('artwork_id', artworkId).order('amount', { ascending: false })) as AuctionBid[]
+  const deleteBid = async (id: string) => {
+    const rows = check(await db.from('auction_bids').delete().eq('id', id).select('id')) as unknown[]
+    if (!rows.length) throw { status: 403 }
+  }
+
   return {
+    listCovers, getAuction, saveAuction, deleteAuction, listBids, deleteBid,
     adminListArtworks, adminGetArtwork, createArtwork, updateArtwork, deleteArtwork, setPublication, setAvailability,
     moveArtwork, takenSlugs, uploadImage, setCover, updateImageAlt, deleteImage, moveImage, replaceImage,
     listCategories, createCategory, updateCategory, deleteCategory, moveCategory,

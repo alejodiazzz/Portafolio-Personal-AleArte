@@ -1,14 +1,15 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { publicSupabase } from '../../lib/supabase'
-import type { ArtworkImage, Category, PublicArtwork } from '../../types'
+import type { ArtworkImage, Auction, Category, PublicArtwork } from '../../types'
 
 /** El escaparate carga todas las obras publicadas de una vez (un portafolio personal). */
 export const SHOWCASE_LIMIT = 300
 const COLUMNS =
-  'id, slug, title, description, price, currency, height, width, measurement_unit, technique, category_id, creation_date, availability_status, display_order, created_at'
+  'id, slug, title, description, price, currency, height, width, measurement_unit, technique, category_id, creation_date, availability_status, display_order, created_at, instagram_url'
+export const AUCTION_COLUMNS = 'artwork_id, starting_price, min_increment, ends_at, current_amount, bid_count, is_active'
 const IMAGE_COLUMNS = 'id, artwork_id, storage_path, image_alt, width, height, is_cover, display_order, dominant_color'
 
-export type ShowcaseArtwork = PublicArtwork & { cover: ArtworkImage | null }
+export type ShowcaseArtwork = PublicArtwork & { cover: ArtworkImage | null; auction: Auction | null }
 
 const byCoverThenOrder = (a: ArtworkImage, b: ArtworkImage) =>
   Number(b.is_cover) - Number(a.is_cover) || a.display_order - b.display_order
@@ -31,15 +32,18 @@ export function createPortfolioApi(db: SupabaseClient) {
     const rows = (data ?? []) as PublicArtwork[]
     if (!rows.length) return []
 
-    const { data: imgs, error: imgError } = await db
-      .from('artwork_images')
-      .select(IMAGE_COLUMNS)
-      .in('artwork_id', rows.map((r) => r.id))
+    const ids = rows.map((r) => r.id)
+    const [{ data: imgs, error: imgError }, { data: auctions, error: auctionError }] = await Promise.all([
+      db.from('artwork_images').select(IMAGE_COLUMNS).in('artwork_id', ids),
+      db.from('auctions').select(AUCTION_COLUMNS).in('artwork_id', ids),
+    ])
     if (imgError) throw imgError
+    if (auctionError) throw auctionError
+    const byArtwork = new Map(((auctions ?? []) as Auction[]).map((a) => [a.artwork_id, a]))
     const covers = new Map<string, ArtworkImage>()
     for (const img of [...((imgs ?? []) as ArtworkImage[])].sort(byCoverThenOrder))
       if (!covers.has(img.artwork_id)) covers.set(img.artwork_id, img)
-    return rows.map((r) => ({ ...r, cover: covers.get(r.id) ?? null }))
+    return rows.map((r) => ({ ...r, cover: covers.get(r.id) ?? null, auction: byArtwork.get(r.id) ?? null }))
   }
 
   return { listCategories, listShowcase }

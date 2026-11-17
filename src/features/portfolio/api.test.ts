@@ -22,10 +22,20 @@ describe('listShowcase', () => {
     expect(f.calls).toContainEqual({ table: 'public_artworks', method: 'order', args: ['display_order'] })
     expect(f.calls).toContainEqual({ table: 'artwork_images', method: 'in', args: ['artwork_id', ['a1', 'a2']] })
   })
+  test('adjunta la subasta de cada obra (o null)', async () => {
+    const f = fakeSupabase({
+      public_artworks: [art(1), art(2)],
+      artwork_images: [],
+      auctions: [{ artwork_id: 'a2', starting_price: 100000, min_increment: 10000, ends_at: '2026-12-01T00:00:00Z', current_amount: null, bid_count: 0, is_active: true }],
+    })
+    const r = await createPortfolioApi(f.client as never).listShowcase()
+    expect(r.map((a) => a.auction?.starting_price ?? null)).toEqual([null, 100000])
+    expect(f.calls).toContainEqual({ table: 'auctions', method: 'in', args: ['artwork_id', ['a1', 'a2']] })
+  })
   test('sin obras no consulta imágenes', async () => {
     const f = fakeSupabase({ public_artworks: [] })
     expect(await createPortfolioApi(f.client as never).listShowcase()).toEqual([])
-    expect(f.calls.some((c) => c.table === 'artwork_images')).toBe(false)
+    expect(f.calls.some((c) => c.table === 'artwork_images' || c.table === 'auctions')).toBe(false)
   })
   test('obra sin imágenes → cover null', async () => {
     const f = fakeSupabase({ public_artworks: [art(1)], artwork_images: [] })

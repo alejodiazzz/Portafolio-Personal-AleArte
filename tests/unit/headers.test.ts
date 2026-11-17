@@ -5,8 +5,8 @@ import { securityHeaders } from '../../vite.config'
 const h = securityHeaders('https://abcd.supabase.co/')
 const csp = h.match(/Content-Security-Policy: (.*)/)![1]
 
-test('connect-src permite solo el proyecto de Supabase y Cloudinary', () => {
-  expect(csp).toContain("connect-src 'self' https://abcd.supabase.co https://api.cloudinary.com")
+test('connect-src permite solo el proyecto de Supabase (HTTP y Realtime) y Cloudinary', () => {
+  expect(csp).toContain("connect-src 'self' https://abcd.supabase.co wss://abcd.supabase.co https://api.cloudinary.com")
 })
 test('no permite scripts inline ni eval', () => {
   const script = csp.split('; ').find((d) => d.startsWith('script-src'))!

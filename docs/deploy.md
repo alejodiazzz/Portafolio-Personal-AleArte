@@ -18,12 +18,15 @@ Arquitectura: SPA estática (Cloudflare Pages) + Supabase (BD, Auth, Edge Functi
 | | `VITE_TURNSTILE_SITE_KEY` | Cloudflare → Turnstile → site key | No |
 | | `VITE_WHATSAPP_NUMBER` | `573001234567` (sin `+`) | No |
 | | `VITE_INSTAGRAM_URL` | `https://instagram.com/…` | No |
+| | `VITE_TIKTOK_URL` (opcional) | `https://www.tiktok.com/@…` — sin ella no aparece el ícono | No |
 | | `VITE_SITE_URL` | `https://<proyecto>.pages.dev` | No |
 | | `NODE_VERSION` | `24` | No |
 | Supabase Edge Functions (`npx supabase secrets set`) | `ADMIN_EMAIL` | correo del propietario | **Sí** |
 | | `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | Cloudinary → API Keys | **Sí** (secret) |
 | | `CRON_SECRET` | cadena aleatoria ≥ 32 caracteres (`openssl rand -hex 32`) | **Sí** |
 | | `ALLOWED_ORIGINS` | `https://<proyecto>.pages.dev` (separar con comas) | No |
+| | `TURNSTILE_SECRET_KEY` | Cloudflare → Turnstile → el widget → *Secret key* (la misma que usa Supabase Auth). Local: `1x0000000000000000000000000000000AA` (prueba) | **Sí** |
+| | `CALLMEBOT_PHONE` / `CALLMEBOT_APIKEY` | tu número con `+57…` y la clave que te envía CallMeBot por WhatsApp (ver §8). Si faltan, las ofertas se guardan pero no llega aviso | **Sí** (apikey) |
 | GitHub → Settings → Secrets → Actions | `SUPABASE_URL_DEV`, `SUPABASE_URL_PROD` | URLs de los proyectos | No |
 | | `CRON_SECRET_DEV`, `CRON_SECRET_PROD` | los mismos `CRON_SECRET` | **Sí** |
 
@@ -98,3 +101,12 @@ curl -sI https://<proyecto>.pages.dev | grep -iE "content-security|x-frame|stric
 curl -s -X PATCH "$SUPABASE_URL/rest/v1/artworks?id=not.is.null" -H "apikey: $PUBLISHABLE" \
   -H "Content-Type: application/json" -d '{"title":"x"}'   # debe fallar o afectar 0 filas
 ```
+
+## 8. Subastas: aviso por WhatsApp con CallMeBot
+
+1. Guarda en tus contactos el número del bot que indica https://www.callmebot.com/blog/free-api-whatsapp-messages/ y envíale por WhatsApp el mensaje de activación que aparece ahí.
+2. El bot responde con tu `apikey` (si no llega en 2 minutos, reintenta al día siguiente).
+3. `npx supabase secrets set --project-ref <ref> CALLMEBOT_PHONE=+57… CALLMEBOT_APIKEY=…`
+4. Despliega la función: `npx supabase functions deploy auction-bid --project-ref <ref>`.
+
+CallMeBot es un servicio gratuito de terceros para uso personal: el aviso incluye nombre, teléfono y correo de quien oferta. Si el servicio falla, la oferta igual queda guardada y la ves en el panel (Obra → Subasta → Ofertas).

@@ -19,3 +19,21 @@ test('setCover desmarca la portada anterior antes de marcar la nueva', async () 
   const updates = f.calls.filter((c) => c.method === 'update').map((c) => c.args[0])
   expect(updates).toEqual([{ is_cover: false }, { is_cover: true }])
 })
+
+test('saveAuction crea la subasta si no existe y solo envía columnas configurables', async () => {
+  const f = fakeSupabase({ auctions: [] })
+  await createAdminApi(f.client as never).saveAuction('a1', { starting_price: 100000, min_increment: 10000, ends_at: '2026-12-01T20:00:00.000Z', is_active: true })
+  const insert = f.calls.find((c) => c.table === 'auctions' && c.method === 'insert')
+  expect(insert?.args[0]).toEqual({ artwork_id: 'a1', starting_price: 100000, min_increment: 10000, ends_at: '2026-12-01T20:00:00.000Z', is_active: true })
+})
+test('saveAuction actualiza la existente', async () => {
+  const f = fakeSupabase({ auctions: [{ artwork_id: 'a1' }] })
+  await createAdminApi(f.client as never).saveAuction('a1', { starting_price: 1, min_increment: 1, ends_at: 'x', is_active: false })
+  expect(f.calls.some((c) => c.table === 'auctions' && c.method === 'update')).toBe(true)
+  expect(f.calls.some((c) => c.table === 'auctions' && c.method === 'insert')).toBe(false)
+})
+test('listBids ordena de mayor a menor', async () => {
+  const f = fakeSupabase({ auction_bids: [] })
+  await createAdminApi(f.client as never).listBids('a1')
+  expect(f.calls).toContainEqual({ table: 'auction_bids', method: 'order', args: ['amount', { ascending: false }] })
+})

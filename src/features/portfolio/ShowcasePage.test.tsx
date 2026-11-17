@@ -5,7 +5,7 @@ import { beforeEach, expect, test, vi } from 'vitest'
 const work = (i: number, over: Record<string, unknown> = {}) => ({
   id: `a${i}`, slug: `obra-${i}`, title: `Obra ${i}`, description: null, price: 100000, currency: 'COP',
   height: 30, width: 20, measurement_unit: 'cm', technique: `Técnica ${i}`, category_id: 'c1', creation_date: null,
-  availability_status: 'available', display_order: i, created_at: '',
+  availability_status: 'available', display_order: i, created_at: '', instagram_url: null, auction: null,
   cover: { id: `i${i}`, artwork_id: `a${i}`, storage_path: `ale-arte/artworks/a${i}/x`, image_alt: null, width: 800, height: 1000,
     is_cover: true, display_order: 0, dominant_color: '#183961' },
   ...over,
@@ -19,6 +19,8 @@ let listImpl: () => Promise<unknown[]>
 vi.mock('./api', () => ({
   portfolioApi: { listCategories: async () => CATS, listShowcase: () => listImpl() },
 }))
+vi.mock('./auction', async (orig) => ({ ...(await orig<typeof import('./auction')>()), useLiveAuction: (a: unknown) => [a, () => {}] }))
+vi.mock('../../lib/turnstile', () => ({ loadTurnstile: () => new Promise(() => {}) }))
 import { ShowcasePage } from './ShowcasePage'
 
 beforeEach(() => {
@@ -171,4 +173,59 @@ test('precarga la obra anterior y la siguiente con el mismo srcset que usa la p�
   expect(seen.some((s) => s.includes('/a1/'))).toBe(true)
   expect(seen.some((s) => s.includes('/a3/'))).toBe(true)
   vi.unstubAllGlobals()
+})
+
+test('redes sociales como íconos con nombre accesible', async () => {
+  renderAt('/')
+  await screen.findByRole('heading', { name: 'Obra 1' })
+  const social = document.querySelector('.sc-social')!
+  for (const name of ['Instagram', 'WhatsApp']) {
+    const link = within(social as HTMLElement).getByRole('link', { name })
+    expect(link.querySelector('svg')).not.toBeNull()
+    expect(link.textContent).toBe('')
+  }
+})
+
+test('botón a la publicación de Instagram solo si la obra la tiene', async () => {
+  listImpl = async () => [work(1, { instagram_url: 'https://www.instagram.com/p/DAbc123/' }), work(2)]
+  renderAt('/')
+  await screen.findByRole('heading', { name: 'Obra 1' })
+  expect(screen.getByRole('link', { name: /Ver en Instagram/ })).toHaveAttribute('href', 'https://www.instagram.com/p/DAbc123/')
+  fireEvent.click(screen.getByRole('button', { name: 'Obra siguiente' }))
+  expect(screen.queryByRole('link', { name: /Ver en Instagram/ })).toBeNull()
+})
+
+const auction = (over: Record<string, unknown> = {}) => ({
+  artwork_id: 'a1', starting_price: 200000, min_increment: 20000, ends_at: new Date(Date.now() + 3 * 86_400_000).toISOString(),
+  current_amount: null, bid_count: 0, is_active: true, ...over,
+})
+
+test('obra en subasta: base, cierre y botón Ofertar que abre el formulario', async () => {
+  listImpl = async () => [work(1, { auction: auction() })]
+  renderAt('/')
+  await screen.findByRole('heading', { name: 'Obra 1' })
+  expect(screen.getByText('En subasta')).toBeInTheDocument()
+  expect(document.querySelector('.sc-price')?.textContent).toBe('$ 200.000 COP')
+  expect(screen.getByText('Precio base · aún sin ofertas')).toBeInTheDocument()
+  expect(screen.getByText(/Cierra en 2 d 23 h|Cierra en 3 d 0 h/)).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: /Ofertar/ }))
+  const dialog = screen.getByRole('dialog', { name: 'Hacer una oferta' })
+  expect(within(dialog).getByLabelText(/Tu oferta/)).toHaveValue(200000)
+  expect(within(dialog).getByText(/Oferta mínima: \$ 200\.000/)).toBeInTheDocument()
+  expect(within(dialog).getByRole('checkbox')).not.toBeChecked()
+  expect(within(dialog).getByRole('button', { name: 'Enviar oferta' })).toBeDisabled()
+})
+
+test('subasta con ofertas muestra la actual y el conteo; cerrada vuelve a WhatsApp', async () => {
+  listImpl = async () => [
+    work(1, { auction: auction({ current_amount: 260000, bid_count: 3 }) }),
+    work(2, { auction: auction({ artwork_id: 'a2', ends_at: new Date(Date.now() - 1000).toISOString(), current_amount: 300000, bid_count: 5 }) }),
+  ]
+  renderAt('/')
+  await screen.findByRole('heading', { name: 'Obra 1' })
+  expect(screen.getByText('Oferta actual · 3 ofertas')).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Obra siguiente' }))
+  expect(screen.getByText('Subasta cerrada')).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /Ofertar/ })).toBeNull()
+  expect(screen.getByRole('link', { name: /Me interesa/ })).toHaveAttribute('href', expect.stringContaining('wa.me'))
 })

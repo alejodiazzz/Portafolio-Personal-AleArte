@@ -57,3 +57,20 @@ test('genera slug único desde el título y crea la obra', async () => {
   expect(await screen.findByText('editando')).toBeInTheDocument()
   expect(created[0]).toMatchObject({ title: 'Luna', slug: 'luna-2', price: null, category_id: '11111111-2222-4333-8444-555555555555' })
 })
+
+test('enlace de Instagram: se guarda en forma canónica', async () => {
+  await renderNew()
+  set(/^Título/, 'Luna')
+  set(/^Publicación de Instagram/, 'instagram.com/p/DAbc123?igsh=xyz')
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+  expect(await screen.findByText('editando')).toBeInTheDocument()
+  expect(created[0]).toMatchObject({ instagram_url: 'https://www.instagram.com/p/DAbc123/' })
+})
+test('enlace de Instagram que no es una publicación muestra error', async () => {
+  await renderNew()
+  set(/^Título/, 'Luna')
+  set(/^Publicación de Instagram/, 'https://www.instagram.com/alearte/')
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+  expect(await screen.findByText(/Pega el enlace de una publicación/)).toBeInTheDocument()
+  expect(created).toHaveLength(0)
+})

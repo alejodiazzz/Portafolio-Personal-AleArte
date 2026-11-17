@@ -1,6 +1,6 @@
 // Carga y renderiza Cloudflare Turnstile (CAPTCHA) sin dependencias.
 type Turnstile = {
-  render: (el: HTMLElement, opts: { sitekey: string; callback: (t: string) => void; 'expired-callback': () => void; language?: string }) => string
+  render: (el: HTMLElement, opts: { sitekey: string; callback: (t: string) => void; 'expired-callback': () => void; language?: string; theme?: 'light' | 'dark' | 'auto' }) => string
   reset: (id?: string) => void
   remove: (id?: string) => void
 }

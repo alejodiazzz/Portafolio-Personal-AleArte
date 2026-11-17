@@ -18,6 +18,11 @@ export const artworkInputSchema = z
     availability_status: z.enum(['available', 'sold', 'commission']),
     publication_status: z.enum(['draft', 'published']),
     display_order: z.number().int(),
+    instagram_url: z
+      .string()
+      .regex(/^https:\/\/www\.instagram\.com\/(p|reel|tv)\/[A-Za-z0-9_-]{5,64}\/$/, 'Pega el enlace de una publicación de Instagram (instagram.com/p/…)')
+      .nullish()
+      .transform((v) => v ?? null),
   })
   .refine((v) => (v.height == null && v.width == null) || v.measurement_unit != null, {
     message: 'Indica la unidad de medida',

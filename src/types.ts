@@ -44,6 +44,30 @@ export type PublicArtwork = {
   availability_status: AvailabilityStatus
   display_order: number
   created_at: string
+  /** Publicación de Instagram (formato canónico https://www.instagram.com/p/<código>/). */
+  instagram_url: string | null
+}
+
+/** Estado público de una subasta (sin datos personales). */
+export type Auction = {
+  artwork_id: string
+  starting_price: number
+  min_increment: number
+  ends_at: string
+  current_amount: number | null
+  bid_count: number
+  is_active: boolean
+}
+
+/** Oferta con datos de contacto (solo admin). */
+export type AuctionBid = {
+  id: string
+  artwork_id: string
+  amount: number
+  bidder_name: string
+  bidder_email: string
+  bidder_phone: string
+  created_at: string
 }
 
 /** Registro completo (solo admin). */

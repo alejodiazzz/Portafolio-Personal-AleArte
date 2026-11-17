@@ -10,8 +10,11 @@ import { imageSrcSet, imageUrl } from '../../lib/cloudinary'
 import { isLightColor, safeColor } from '../../lib/color'
 import { priceLabel } from '../../lib/price'
 import { useAsync } from '../../lib/useAsync'
-import type { Category } from '../../types'
+import type { Auction, Category } from '../../types'
 import { portfolioApi, type ShowcaseArtwork } from './api'
+import { auctionView, formatCountdown, money, useLiveAuction, useNow } from './auction'
+import { BidDialog } from './BidDialog'
+import { BrandIcon } from './BrandIcon'
 import { IndexDialog } from './IndexDialog'
 
 const STATUS: Record<ShowcaseArtwork['availability_status'], string> = {
@@ -62,6 +65,7 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
   const [search] = useSearchParams()
   const navigate = useNavigate()
   const [indexOpen, setIndexOpen] = useState(false)
+  const [bidOpen, setBidOpen] = useState(false)
 
   const usedCategories = useMemo(() => categories.filter((c) => works.some((w) => w.category_id === c.id)), [categories, works])
   const activeCat = usedCategories.find((c) => c.slug === search.get('categoria')) ?? null
@@ -87,9 +91,9 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
     if (nav && active) nav.scrollLeft = active.offsetLeft - 16
   }, [activeCat?.id])
 
-  // Teclado (desactivado con el índice abierto: el diálogo maneja Escape).
+  // Teclado (desactivado con un diálogo abierto: las flechas también mueven el cursor en los campos).
   useEffect(() => {
-    if (indexOpen || !current) return
+    if (indexOpen || bidOpen || !current) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight') step(1)
       else if (e.key === 'ArrowLeft') step(-1)
@@ -101,7 +105,7 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
   // Rueda del mouse en escritorio (una obra por gesto).
   const wheelLock = useRef(0)
   useEffect(() => {
-    if (indexOpen || !current) return
+    if (indexOpen || bidOpen || !current) return
     const onWheel = (e: WheelEvent) => {
       if (!window.matchMedia?.('(min-width: 821px)').matches) return
       if (Date.now() < wheelLock.current || Math.abs(e.deltaY) < 30) return
@@ -129,6 +133,8 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
       img.src = imageUrl(w.cover.storage_path, 1600)
     }
   }, [next, prevWork])
+
+  const [auction, setAuction] = useLiveAuction(current?.auction ?? null)
 
   if (!current)
     return (
@@ -173,19 +179,30 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
           <h1 className="sc-title">{current.title}</h1>
           {current.technique && <p className="sc-tech">{current.technique}</p>}
           {current.description && <p className="sc-desc">{current.description}</p>}
-          <a className="sc-cta" href={buildWhatsAppLink({ artworkTitle: current.title, artworkUrl: url })} target="_blank" rel="noopener noreferrer">
-            {CTA[current.availability_status]} <span aria-hidden="true">→</span>
-          </a>
+          {auction ? (
+            <AuctionCta auction={auction} onBid={() => setBidOpen(true)} whatsapp={buildWhatsAppLink({ artworkTitle: current.title, artworkUrl: url })} />
+          ) : (
+            <a className="sc-cta" href={buildWhatsAppLink({ artworkTitle: current.title, artworkUrl: url })} target="_blank" rel="noopener noreferrer">
+              {CTA[current.availability_status]} <span aria-hidden="true">→</span>
+            </a>
+          )}
+          {current.instagram_url && (
+            <a className="sc-ig" href={current.instagram_url} target="_blank" rel="noopener noreferrer">
+              <BrandIcon name="instagram" size={16} /> Ver en Instagram
+            </a>
+          )}
         </section>
 
         <Artwork current={current} dir={dir} onSwipe={step} />
 
         <aside className="sc-side">
+          {auction ? <AuctionSide auction={auction} /> : <>
           <p className="sc-price">
             {current.availability_status === 'available' && current.price != null ? price.replace(/ COP$/, '') : price}
             {current.availability_status === 'available' && current.price != null && <small> COP</small>}
           </p>
           <p className={`sc-status is-${current.availability_status}`}><i aria-hidden="true" />{STATUS[current.availability_status]}</p>
+          </>}
           <dl className="sc-specs">
             {size && <div><dt>Medidas</dt><dd>{size}</dd></div>}
             {category && <div><dt>Categoría</dt><dd>{category.name}</dd></div>}
@@ -194,8 +211,9 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
 
         <footer className="sc-footer">
           <div className="sc-social">
-            <a href={instagramUrl} target="_blank" rel="noopener noreferrer">Instagram</a>
-            <a href={buildWhatsAppLink()} target="_blank" rel="noopener noreferrer">WhatsApp</a>
+            <a href={instagramUrl} target="_blank" rel="noopener noreferrer" aria-label="Instagram"><BrandIcon name="instagram" /></a>
+            {env.tiktokUrl && <a href={env.tiktokUrl} target="_blank" rel="noopener noreferrer" aria-label="TikTok"><BrandIcon name="tiktok" /></a>}
+            <a href={buildWhatsAppLink()} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><BrandIcon name="whatsapp" /></a>
           </div>
           <p className="sc-motto">Arte hecho a mano,<br />pensado para quedarse.</p>
           {next && (
@@ -206,6 +224,16 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
           )}
         </footer>
       </div>
+
+      {bidOpen && auction && (
+        <BidDialog
+          artworkId={current.id}
+          title={current.title}
+          minNext={auctionView(auction, 0).minNext}
+          onClose={() => setBidOpen(false)}
+          onPlaced={(r) => setAuction({ ...auction, current_amount: r.currentAmount, bid_count: r.bidCount, ends_at: r.endsAt })}
+        />
+      )}
 
       {indexOpen && (
         <IndexDialog
@@ -219,6 +247,36 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
         />
       )}
     </Frame>
+  )
+}
+
+const offers = (n: number) => `${n} ${n === 1 ? 'oferta' : 'ofertas'}`
+const closedAt = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })
+
+/** Monto, estado y cuenta regresiva de la subasta (se actualiza cada segundo). */
+function AuctionSide({ auction }: { auction: Auction }) {
+  const v = auctionView(auction, useNow())
+  const caption = v.hasBids
+    ? `${v.open ? 'Oferta actual' : 'Oferta final'} · ${offers(auction.bid_count)}`
+    : v.open ? 'Precio base · aún sin ofertas' : 'Sin ofertas'
+  return (
+    <>
+      <p className="sc-price">{money(v.amount)}<small> COP</small></p>
+      <p className="sc-bidinfo">{caption}</p>
+      <p className={`sc-status ${v.open ? 'is-auction' : 'is-sold'}`}><i aria-hidden="true" />{v.open ? 'En subasta' : 'Subasta cerrada'}</p>
+      <p className="sc-countdown" aria-live="off">
+        {v.open ? `Cierra en ${formatCountdown(v.msLeft)}` : `Cerró el ${closedAt.format(new Date(auction.ends_at))}`}
+      </p>
+    </>
+  )
+}
+
+function AuctionCta({ auction, onBid, whatsapp }: { auction: Auction; onBid: () => void; whatsapp: string }) {
+  const open = auctionView(auction, useNow()).open
+  return open ? (
+    <button type="button" className="sc-cta" aria-haspopup="dialog" onClick={onBid}>Ofertar <span aria-hidden="true">→</span></button>
+  ) : (
+    <a className="sc-cta" href={whatsapp} target="_blank" rel="noopener noreferrer">Me interesa <span aria-hidden="true">→</span></a>
   )
 }
 

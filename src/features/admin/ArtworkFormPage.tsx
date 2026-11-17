@@ -1,21 +1,23 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toUserMessage } from '../../lib/errors'
+import { normalizeInstagramPost } from '../../lib/instagram'
 import { slugify, uniqueSlug } from '../../lib/slug'
 import type { Artwork, Category } from '../../types'
 import { adminApi } from './api'
 import { ArtworkImagesEditor } from './ArtworkImagesEditor'
+import { AuctionEditor } from './AuctionEditor'
 import { artworkInputSchema } from './schema'
 
 type Form = Record<
   'title' | 'slug' | 'description' | 'price' | 'height' | 'width' | 'measurement_unit' | 'technique' | 'category_id' |
-  'creation_date' | 'availability_status' | 'publication_status' | 'display_order',
+  'creation_date' | 'availability_status' | 'publication_status' | 'display_order' | 'instagram_url',
   string
 >
 
 const EMPTY: Form = {
   title: '', slug: '', description: '', price: '', height: '', width: '', measurement_unit: '', technique: '',
-  category_id: '', creation_date: '', availability_status: 'available', publication_status: 'draft', display_order: '0',
+  category_id: '', creation_date: '', availability_status: 'available', publication_status: 'draft', display_order: '0', instagram_url: '',
 }
 
 const num = (s: string) => (s.trim() === '' ? null : Number(s))
@@ -24,6 +26,7 @@ const toForm = (a: Artwork): Form => ({
   height: a.height?.toString() ?? '', width: a.width?.toString() ?? '', measurement_unit: a.measurement_unit ?? '',
   technique: a.technique ?? '', category_id: a.category_id, creation_date: a.creation_date ?? '',
   availability_status: a.availability_status, publication_status: a.publication_status, display_order: String(a.display_order),
+  instagram_url: a.instagram_url ?? '',
 })
 
 export function ArtworkFormPage() {
@@ -64,6 +67,7 @@ export function ArtworkFormPage() {
       const taken = await adminApi.takenSlugs()
       slug = uniqueSlug(slugify(form.title), id ? taken.filter((s) => s !== form.slug) : taken)
     }
+    const instagram = normalizeInstagramPost(form.instagram_url)
     const parsed = artworkInputSchema.safeParse({
       title: form.title,
       slug,
@@ -78,6 +82,8 @@ export function ArtworkFormPage() {
       availability_status: form.availability_status,
       publication_status: form.publication_status,
       display_order: Number(form.display_order) || 0,
+      // 'invalid' no pasa la regex del esquema y muestra su mensaje.
+      instagram_url: instagram,
     })
     if (!parsed.success) {
       const errs: Record<string, string> = {}
@@ -97,13 +103,18 @@ export function ArtworkFormPage() {
     }
   }
 
-  const err = (k: string) => errors[k] && <span role="alert"> {errors[k]}</span>
+  const err = (k: string) => errors[k] && <span role="alert">{errors[k]}</span>
 
   return (
     <main>
-      <p><Link to="/admin">← Obras</Link></p>
-      <h1>{id ? 'Editar obra' : 'Nueva obra'}</h1>
-      <form onSubmit={submit} noValidate>
+      <Link className="ad-back" to="/admin">← Obras</Link>
+      <div className="ad-page-head">
+        <h1>{id ? form.title || 'Editar obra' : 'Nueva obra'}</h1>
+        {id && form.publication_status === 'published' && (
+          <a className="ad-btn is-ghost" href={`/obra/${form.slug}`} target="_blank" rel="noopener noreferrer">Ver en el sitio ↗</a>
+        )}
+      </div>
+      <form className="ad-form ad-card" onSubmit={submit} noValidate>
         <p><label>Título <input maxLength={150} {...field('title')} /></label>{err('title')}</p>
         <p>
           <label>URL (slug) <input maxLength={170} {...field('slug')} onInput={() => setSlugTouched(true)} placeholder="se genera del título" /></label>
@@ -113,22 +124,29 @@ export function ArtworkFormPage() {
         <p><label>Técnica <input maxLength={150} {...field('technique')} /></label>{err('technique')}</p>
         <p><label>Descripción <textarea maxLength={5000} rows={5} {...field('description')} /></label>{err('description')}</p>
         <p><label>Precio (COP) <input type="number" min={0} step={1} {...field('price')} /></label>{err('price')}</p>
-        <p>
-          <label>Alto <input type="number" min={0} step="0.01" {...field('height')} /></label>{' '}
-          <label>Ancho <input type="number" min={0} step="0.01" {...field('width')} /></label>{' '}
-          <label>Unidad <select {...field('measurement_unit')}><option value="">—</option><option value="cm">cm</option><option value="m">m</option><option value="in">in</option></select></label>
-          {err('height')}{err('width')}{err('measurement_unit')}
-        </p>
         <p><label>Fecha de creación <input type="date" {...field('creation_date')} /></label>{err('creation_date')}</p>
-        <p>
-          <label>Disponibilidad <select {...field('availability_status')}><option value="available">Disponible</option><option value="sold">Vendida</option><option value="commission">Por encargo</option></select></label>{' '}
-          <label>Publicación <select {...field('publication_status')}><option value="draft">Borrador</option><option value="published">Publicada</option></select></label>
+        <div className="ad-wide">
+          <div className="ad-row">
+            <label>Alto <input type="number" min={0} step="0.01" {...field('height')} /></label>
+            <label>Ancho <input type="number" min={0} step="0.01" {...field('width')} /></label>
+            <label>Unidad <select {...field('measurement_unit')}><option value="">—</option><option value="cm">cm</option><option value="m">m</option><option value="in">in</option></select></label>
+          </div>
+          {err('height')}{err('width')}{err('measurement_unit')}
+        </div>
+        <p><label>Disponibilidad <select {...field('availability_status')}><option value="available">Disponible</option><option value="sold">Vendida</option><option value="commission">Por encargo</option></select></label></p>
+        <p><label>Publicación <select {...field('publication_status')}><option value="draft">Borrador</option><option value="published">Publicada</option></select></label></p>
+        <p className="ad-wide">
+          <label>Publicación de Instagram (opcional) <input inputMode="url" maxLength={300} placeholder="https://www.instagram.com/p/…" {...field('instagram_url')} /></label>
+          {err('instagram_url') || <span className="ad-hint">Pega el enlace del post o reel; en la obra aparecerá «Ver en Instagram».</span>}
         </p>
         <p><label>Orden <input type="number" step={1} {...field('display_order')} /></label></p>
-        {message && <p role="status">{message}</p>}
-        <button type="submit" disabled={busy}>Guardar</button>
+        <div className="ad-actions ad-wide">
+          <button type="submit" disabled={busy}>Guardar</button>
+          {message && <p role="status">{message}</p>}
+        </div>
       </form>
       {id && <ArtworkImagesEditor artworkId={id} defaultAlt={form.title} />}
+      {id && <AuctionEditor artworkId={id} />}
     </main>
   )
 }

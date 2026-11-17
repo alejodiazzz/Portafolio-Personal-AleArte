@@ -48,9 +48,9 @@ export function ArtworkImagesEditor({ artworkId, defaultAlt }: { artworkId: stri
   }
 
   return (
-    <section>
-      <h2>Imágenes</h2>
-      <p>
+    <section className="ad-card">
+      <div className="ad-card-head"><h2>Imágenes</h2></div>
+      <p className="ad-upload">
         <label>
           Agregar imágenes (JPG, PNG o WebP, máx. 15 MB){' '}
           <input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={onFiles} />
@@ -58,21 +58,21 @@ export function ArtworkImagesEditor({ artworkId, defaultAlt }: { artworkId: stri
       </p>
       {progress.length > 0 && <ul aria-live="polite">{progress.map((p, i) => <li key={i}>{p}</li>)}</ul>}
       {message && <p role="alert">{message}</p>}
-      <ol>
+      <ol className="ad-images">
         {images.map((img, i) => (
           <li key={img.id}>
             <img src={imageUrl(img.storage_path, 400)} alt={img.image_alt ?? ''} width={160} loading="lazy" />
-            {img.is_cover && <strong> (portada)</strong>}
+            {img.is_cover && <span className="ad-badge is-live">Portada</span>}
             <p>
               <label>
                 Texto alternativo{' '}
                 <input defaultValue={img.image_alt ?? ''} maxLength={250} onBlur={(e) => run(() => adminApi.updateImageAlt(img.id, e.target.value))} />
               </label>
             </p>
-            <p>
-              <button type="button" disabled={i === 0} onClick={() => run(() => adminApi.moveImage(img.id, 'up'))}>↑</button>{' '}
-              <button type="button" disabled={i === images.length - 1} onClick={() => run(() => adminApi.moveImage(img.id, 'down'))}>↓</button>{' '}
-              {!img.is_cover && <button type="button" onClick={() => run(() => adminApi.setCover(img.id))}>Marcar como portada</button>}{' '}
+            <p className="ad-tools">
+              <button type="button" className="ad-icon-btn is-ghost" aria-label="Mover antes" disabled={i === 0} onClick={() => run(() => adminApi.moveImage(img.id, 'up'))}>↑</button>{' '}
+              <button type="button" className="ad-icon-btn is-ghost" aria-label="Mover después" disabled={i === images.length - 1} onClick={() => run(() => adminApi.moveImage(img.id, 'down'))}>↓</button>{' '}
+              {!img.is_cover && <button type="button" className="is-small" onClick={() => run(() => adminApi.setCover(img.id))}>Marcar como portada</button>}{' '}
               <label>
                 Reemplazar{' '}
                 <input
@@ -87,11 +87,11 @@ export function ArtworkImagesEditor({ artworkId, defaultAlt }: { artworkId: stri
               </label>{' '}
               {confirming === img.id ? (
                 <>
-                  ¿Eliminar? <button type="button" onClick={() => run(() => adminApi.deleteImage(img.id)).then(() => setConfirming(null))}>Sí, eliminar</button>{' '}
-                  <button type="button" onClick={() => setConfirming(null)}>Cancelar</button>
+                  <span className="ad-confirm">¿Eliminar?</span> <button type="button" className="is-danger is-small" onClick={() => run(() => adminApi.deleteImage(img.id)).then(() => setConfirming(null))}>Sí, eliminar</button>{' '}
+                  <button type="button" className="is-ghost is-small" onClick={() => setConfirming(null)}>Cancelar</button>
                 </>
               ) : (
-                <button type="button" onClick={() => setConfirming(img.id)}>Eliminar</button>
+                <button type="button" className="is-ghost is-small" onClick={() => setConfirming(img.id)}>Eliminar</button>
               )}
             </p>
           </li>

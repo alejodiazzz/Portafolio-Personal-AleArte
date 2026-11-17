@@ -21,6 +21,11 @@ describe('parseEnv', () => {
   test('exige número WhatsApp solo dígitos con código país', () => {
     expect(() => parseEnv({ ...valid, VITE_WHATSAPP_NUMBER: '+57 300' })).toThrow(/VITE_WHATSAPP_NUMBER/)
   })
+  test('TikTok es opcional pero, si viene, debe ser URL', () => {
+    expect(parseEnv(valid).tiktokUrl).toBeNull()
+    expect(parseEnv({ ...valid, VITE_TIKTOK_URL: 'https://www.tiktok.com/@alearte' }).tiktokUrl).toBe('https://www.tiktok.com/@alearte')
+    expect(() => parseEnv({ ...valid, VITE_TIKTOK_URL: 'tiktok' })).toThrow(/VITE_TIKTOK_URL/)
+  })
   test('rechaza variable faltante', () => {
     const { VITE_SUPABASE_PUBLISHABLE_KEY: _, ...rest } = valid
     expect(() => parseEnv(rest)).toThrow(/VITE_SUPABASE_PUBLISHABLE_KEY/)

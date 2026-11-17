@@ -1,0 +1,164 @@
+/* Panel de Ale Arte · misma identidad que el escaparate (Fraunces + Manrope) sobre papel cálido claro.
+   Todo vive bajo .ad para no tocar el sitio público. Estiliza los elementos semánticos del panel
+   (main, form, table, button…) y unas pocas clases ad-*. */
+.ad {
+  --paper: #f4efe6;
+  --card: #fffdf8;
+  --ink: #1d1a17;
+  --ink-soft: rgba(29, 26, 23, 0.64);
+  --line: rgba(29, 26, 23, 0.13);
+  --accent: #7d3522;
+  --accent-soft: rgba(125, 53, 34, 0.09);
+  --ok: #2f7a4f;
+  --danger: #b3261e;
+  --display: 'Fraunces Variable', Georgia, serif;
+  --body: 'Manrope Variable', system-ui, sans-serif;
+  --radius: 14px;
+  min-height: 100dvh;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 15px/1.55 var(--body);
+  -webkit-font-smoothing: antialiased;
+}
+.ad *, .ad *::before, .ad *::after { box-sizing: border-box; }
+.ad :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ad a { color: var(--accent); text-underline-offset: 3px; }
+.ad-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ── Barra superior ── */
+.ad-top {
+  position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 20px;
+  padding: 14px clamp(16px, 4vw, 40px); background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: blur(10px); border-bottom: 1px solid var(--line);
+}
+.ad-brand { display: flex; align-items: baseline; gap: 8px; font-family: var(--display); font-size: 22px; color: var(--ink); text-decoration: none; }
+.ad-brand small { font-family: var(--body); font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); }
+.ad-nav { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: rgba(29, 26, 23, 0.05); }
+.ad-nav a { padding: 7px 16px; border-radius: 999px; color: var(--ink-soft); font-size: 14px; font-weight: 500; text-decoration: none; }
+.ad-nav a:hover { color: var(--ink); }
+.ad-nav a.active { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(29, 26, 23, 0.12); }
+.ad-top-end { display: flex; align-items: center; gap: 14px; margin-left: auto; font-size: 14px; }
+
+/* ── Página ── */
+.ad main { width: min(1080px, 100%); margin: 0 auto; padding: clamp(24px, 5vw, 48px) clamp(16px, 4vw, 40px) 80px; }
+.ad h1 { margin: 0 0 6px; font-family: var(--display); font-weight: 400; font-size: clamp(32px, 4vw, 44px); line-height: 1.1; letter-spacing: -0.01em; }
+.ad h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 24px; }
+.ad p { margin: 0; }
+.ad-page-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 28px; }
+.ad-back { display: inline-block; margin-bottom: 14px; font-size: 14px; color: var(--ink-soft) !important; text-decoration: none; }
+.ad-back:hover { color: var(--ink) !important; }
+.ad-hint { color: var(--ink-soft); font-size: 14px; }
+
+/* ── Botones: por defecto secundarios; enviar = primario ── */
+.ad button, .ad-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 38px; padding: 8px 16px;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--card); color: var(--ink);
+  font: 600 14px var(--body); cursor: pointer; text-decoration: none; transition: background 0.2s, border-color 0.2s, transform 0.2s;
+  -webkit-appearance: none; appearance: none;
+}
+.ad button:hover:not(:disabled) { border-color: rgba(29, 26, 23, 0.3); }
+.ad button:disabled { opacity: 0.4; cursor: not-allowed; }
+.ad button[type='submit'], .ad .ad-btn:not(.is-ghost):not(.is-danger), .ad .ad-primary {
+  background: var(--ink); border-color: var(--ink); color: var(--paper) !important;
+}
+.ad button[type='submit']:hover:not(:disabled), .ad .ad-btn:not(.is-ghost):not(.is-danger):hover, .ad .ad-primary:hover { transform: translateY(-1px); }
+.ad .is-ghost { background: transparent; }
+.ad .is-danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+.ad .is-small { min-height: 30px; padding: 4px 12px; font-size: 13px; }
+.ad-icon-btn { width: 34px; min-height: 34px !important; padding: 0 !important; }
+
+/* ── Formularios ── */
+.ad label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--ink); }
+.ad input:not([type='checkbox']):not([type='file']), .ad select, .ad textarea {
+  width: 100%; padding: 11px 13px; border: 1px solid var(--line); border-radius: 10px; background: #fff;
+  font: 500 15px var(--body); color: var(--ink); transition: border-color 0.2s, box-shadow 0.2s;
+}
+.ad input:focus, .ad select:focus, .ad textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.ad textarea { resize: vertical; line-height: 1.55; }
+.ad input[type='checkbox'] { width: 18px; height: 18px; accent-color: var(--ink); }
+.ad input[type='file'] { font: 500 14px var(--body); }
+.ad input[type='file']::file-selector-button {
+  margin-right: 12px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--card);
+  font: 600 13px var(--body); cursor: pointer;
+}
+.ad [role='alert'], .ad-error { color: var(--danger); font-size: 13px; font-weight: 500; }
+.ad [role='status'], .ad-status { color: var(--ok); font-size: 14px; font-weight: 500; }
+
+/* Formulario en tarjetas: dos columnas en escritorio */
+.ad-card { margin-top: 24px; padding: clamp(18px, 3vw, 28px); border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); }
+.ad-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.ad-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 20px; }
+.ad-form > p { display: grid; gap: 4px; align-content: start; }
+.ad-form > p:has(textarea), .ad-wide { grid-column: 1 / -1; }
+.ad-form .ad-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.ad-check label { display: flex; align-items: center; gap: 10px; font-weight: 500; padding-top: 24px; }
+.ad-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.ad-confirm { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 14px; }
+.ad-summary { padding: 12px 14px; border-radius: 10px; background: var(--accent-soft); font-size: 14px; }
+
+/* ── Insignias ── */
+.ad-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: rgba(29, 26, 23, 0.06); color: var(--ink-soft); white-space: nowrap; }
+.ad-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.ad-badge.is-live { background: rgba(47, 122, 79, 0.1); color: var(--ok); }
+.ad-badge.is-auction { background: rgba(168, 106, 0, 0.12); color: #8a5600; }
+
+/* ── Tablas ── */
+.ad-table-wrap { margin-top: 20px; overflow-x: auto; }
+.ad table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.ad caption { padding-bottom: 10px; text-align: left; font-family: var(--display); font-size: 18px; }
+.ad th { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+.ad td { padding: 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.ad tbody tr:hover { background: rgba(29, 26, 23, 0.025); }
+.ad-num { font-variant-numeric: tabular-nums; font-weight: 600; }
+.ad-contact { display: grid; gap: 2px; }
+.ad-row-actions { white-space: nowrap; text-align: right; }
+
+/* Lista de obras */
+.ad-works { border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); overflow-x: auto; }
+.ad-works td:first-child { white-space: nowrap; }
+.ad-work { display: flex; align-items: center; gap: 14px; min-width: 220px; }
+.ad-work img, .ad-work .ad-thumb-empty { width: 56px; height: 56px; flex: none; border-radius: 8px; object-fit: cover; background: rgba(29, 26, 23, 0.06); }
+.ad-work a { color: var(--ink); font-family: var(--display); font-size: 17px; text-decoration: none; }
+.ad-work a:hover { text-decoration: underline; }
+.ad-works select { width: auto; padding: 7px 10px; font-size: 14px; }
+.ad-works td .ad-badge { margin-right: 8px; }
+
+/* Imágenes de la obra */
+.ad-images { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; margin: 18px 0 0; padding: 0; list-style: none; }
+.ad-images li { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.ad-images img { width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 8px; background: var(--paper); }
+.ad-images .ad-tools { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ad-upload { padding: 18px; border: 1.5px dashed rgba(29, 26, 23, 0.25); border-radius: 12px; background: var(--paper); }
+
+/* Categorías */
+.ad-list { display: grid; gap: 8px; margin: 0 0 8px; padding: 0; list-style: none; }
+.ad-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+.ad-list li > strong { flex: 1; font-family: var(--display); font-weight: 400; font-size: 17px; }
+
+/* ── Acceso (login / MFA / no autorizado): tarjeta centrada ── */
+.ad:not(:has(.ad-top)) { display: grid; place-items: center; padding: 16px; }
+.ad:not(:has(.ad-top)) main {
+  width: min(420px, 100%); padding: 32px clamp(20px, 5vw, 36px); border: 1px solid var(--line);
+  border-radius: 20px; background: var(--card); box-shadow: 0 30px 60px -36px rgba(29, 26, 23, 0.35);
+}
+.ad:not(:has(.ad-top)) main::before { content: 'Ale Arte'; display: block; margin-bottom: 18px; font-family: var(--display); font-size: 20px; color: var(--accent); }
+.ad:not(:has(.ad-top)) h1 { font-size: 28px; margin-bottom: 12px; }
+.ad:not(:has(.ad-top)) form { display: grid; gap: 14px; margin: 18px 0 12px; }
+.ad:not(:has(.ad-top)) form button[type='submit'] { width: 100%; }
+.ad:not(:has(.ad-top)) main > p { color: var(--ink-soft); font-size: 14px; }
+.ad:not(:has(.ad-top)) main > button { margin-top: 8px; }
+
+@media (max-width: 720px) {
+  .ad-top { flex-wrap: wrap; gap: 10px 14px; }
+  .ad-nav { order: 3; width: 100%; }
+  .ad-nav a { flex: 1; text-align: center; }
+  .ad-form, .ad-form .ad-row { grid-template-columns: minmax(0, 1fr); }
+  .ad-check label { padding-top: 0; }
+}
+
+/* Ajustes finos */
+.ad-form > p.ad-summary { display: block; }
+.ad-images li > * { min-width: 0; }
+.ad-images .ad-badge { justify-self: start; }
+.ad-images input[type='file'] { max-width: 100%; }
+.ad-images label { min-width: 0; }

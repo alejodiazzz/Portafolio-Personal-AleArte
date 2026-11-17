@@ -5,12 +5,13 @@ import { defineConfig, loadEnv, type Plugin } from 'vite'
 /** Genera dist/_headers (Cloudflare Pages) con CSP ajustada al proyecto de Supabase. */
 export function securityHeaders(supabaseUrl: string): string {
   const supabase = new URL(supabaseUrl).origin
+  const realtime = supabase.replace(/^http/, 'ws') // wss:// en producción (Realtime de subastas)
   const csp = [
     "default-src 'self'",
     "script-src 'self' https://challenges.cloudflare.com",
     "frame-src https://challenges.cloudflare.com",
     "img-src 'self' data: https://res.cloudinary.com",
-    `connect-src 'self' ${supabase} https://api.cloudinary.com`,
+    `connect-src 'self' ${supabase} ${realtime} https://api.cloudinary.com`,
     "style-src 'self' 'unsafe-inline'",
     "font-src 'self'",
     "object-src 'none'",

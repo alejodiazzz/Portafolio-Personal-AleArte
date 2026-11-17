@@ -20,6 +20,10 @@ const RULES: Record<string, Rule> = {
   VITE_INSTAGRAM_URL: isUrl,
   VITE_SITE_URL: isUrl,
 }
+/** Opcionales: si vienen, se validan. */
+const OPTIONAL: Record<string, Rule> = {
+  VITE_TIKTOK_URL: isUrl,
+}
 
 export type Env = {
   supabaseUrl: string
@@ -28,6 +32,7 @@ export type Env = {
   turnstileSiteKey: string
   whatsappNumber: string
   instagramUrl: string
+  tiktokUrl: string | null
   siteUrl: string
 }
 
@@ -37,7 +42,11 @@ export function parseEnv(raw: Record<string, string | undefined>): Env {
     if (v === undefined || v === '') return [`${k}: requerido`]
     const msg = rule(v)
     return msg ? [`${k}: ${msg}`] : []
-  })
+  }).concat(Object.entries(OPTIONAL).flatMap(([k, rule]) => {
+    const v = raw[k]
+    const msg = v ? rule(v) : null
+    return msg ? [`${k}: ${msg}`] : []
+  }))
   if (problems.length) throw new Error(`Configuración de entorno inválida → ${problems.join('; ')}`)
   const e = raw as Record<string, string>
   return {
@@ -47,6 +56,7 @@ export function parseEnv(raw: Record<string, string | undefined>): Env {
     turnstileSiteKey: e.VITE_TURNSTILE_SITE_KEY,
     whatsappNumber: e.VITE_WHATSAPP_NUMBER,
     instagramUrl: e.VITE_INSTAGRAM_URL,
+    tiktokUrl: e.VITE_TIKTOK_URL || null,
     siteUrl: e.VITE_SITE_URL.replace(/\/$/, ''),
   }
 }

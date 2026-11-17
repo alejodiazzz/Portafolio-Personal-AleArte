@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { env } from '../../../config/env'
 import { supabase } from '../../../lib/supabase'
-import { loadTurnstile } from './turnstile'
+import { loadTurnstile } from '../../../lib/turnstile'
 
 export function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
   const [email, setEmail] = useState('')

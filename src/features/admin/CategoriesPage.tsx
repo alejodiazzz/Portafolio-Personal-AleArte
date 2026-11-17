@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
 import { toUserMessage } from '../../lib/errors'
 import { slugify } from '../../lib/slug'
 import type { Category } from '../../types'
@@ -45,34 +44,42 @@ export function CategoriesPage() {
 
   return (
     <main>
-      <p><Link to="/admin">← Obras</Link></p>
-      <h1>Categorías</h1>
+      <div className="ad-page-head">
+        <div>
+          <h1>Categorías</h1>
+          <p className="ad-hint">Solo aparecen en el sitio las categorías que tienen obras publicadas.</p>
+        </div>
+      </div>
       {message && <p role="alert">{message}</p>}
-      <ol>
+      <ol className="ad-list">
         {items.map((c, i) => (
           <li key={c.id}>
-            {c.name} <small>({c.slug})</small>{' '}
-            <button type="button" disabled={i === 0} onClick={() => run(() => adminApi.moveCategory(c.id, 'up'))}>↑</button>
-            <button type="button" disabled={i === items.length - 1} onClick={() => run(() => adminApi.moveCategory(c.id, 'down'))}>↓</button>{' '}
-            <button type="button" onClick={() => { setEditing(c); setName(c.name); setDescription(c.description ?? '') }}>Editar</button>{' '}
+            <strong>{c.name}</strong> <small className="ad-hint">/{c.slug}</small>
+            <button type="button" className="ad-icon-btn is-ghost" aria-label={`Subir ${c.name}`} disabled={i === 0} onClick={() => run(() => adminApi.moveCategory(c.id, 'up'))}>↑</button>
+            <button type="button" className="ad-icon-btn is-ghost" aria-label={`Bajar ${c.name}`} disabled={i === items.length - 1} onClick={() => run(() => adminApi.moveCategory(c.id, 'down'))}>↓</button>{' '}
+            <button type="button" className="is-small" onClick={() => { setEditing(c); setName(c.name); setDescription(c.description ?? '') }}>Editar</button>{' '}
             {confirming === c.id ? (
               <>
-                ¿Eliminar? <button type="button" onClick={() => run(() => adminApi.deleteCategory(c.id)).then(() => setConfirming(null))}>Sí</button>{' '}
-                <button type="button" onClick={() => setConfirming(null)}>No</button>
+                <span className="ad-confirm">¿Eliminar?</span> <button type="button" className="is-danger is-small" onClick={() => run(() => adminApi.deleteCategory(c.id)).then(() => setConfirming(null))}>Sí</button>{' '}
+                <button type="button" className="is-ghost is-small" onClick={() => setConfirming(null)}>No</button>
               </>
             ) : (
-              <button type="button" onClick={() => setConfirming(c.id)}>Eliminar</button>
+              <button type="button" className="is-ghost is-small" onClick={() => setConfirming(c.id)}>Eliminar</button>
             )}
           </li>
         ))}
       </ol>
-      <h2>{editing ? `Editar “${editing.name}”` : 'Nueva categoría'}</h2>
-      <form onSubmit={submit}>
-        <p><label>Nombre <input maxLength={80} value={name} onChange={(e) => setName(e.target.value)} /></label></p>
+      <section className="ad-card">
+      <div className="ad-card-head"><h2>{editing ? `Editar “${editing.name}”` : 'Nueva categoría'}</h2></div>
+      <form className="ad-form" onSubmit={submit}>
+        <p className="ad-wide"><label>Nombre <input maxLength={80} value={name} onChange={(e) => setName(e.target.value)} /></label></p>
         <p><label>Descripción <textarea maxLength={1000} value={description} onChange={(e) => setDescription(e.target.value)} /></label></p>
-        <button type="submit">Guardar</button>
-        {editing && <button type="button" onClick={() => { setEditing(null); setName(''); setDescription('') }}>Cancelar</button>}
+        <div className="ad-actions ad-wide">
+          <button type="submit">Guardar</button>
+          {editing && <button type="button" className="is-ghost" onClick={() => { setEditing(null); setName(''); setDescription('') }}>Cancelar</button>}
+        </div>
       </form>
+      </section>
     </main>
   )
 }
