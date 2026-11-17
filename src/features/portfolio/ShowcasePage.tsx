@@ -16,6 +16,7 @@ import { auctionView, formatCountdown, money, useLiveAuction, useNow } from './a
 import { BidDialog } from './BidDialog'
 import { BrandIcon } from './BrandIcon'
 import { IndexDialog } from './IndexDialog'
+import { ZoomViewer } from './ZoomViewer'
 
 const STATUS: Record<ShowcaseArtwork['availability_status'], string> = {
   available: 'Disponible',
@@ -66,6 +67,8 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
   const navigate = useNavigate()
   const [indexOpen, setIndexOpen] = useState(false)
   const [bidOpen, setBidOpen] = useState(false)
+  const [zoomOpen, setZoomOpen] = useState(false)
+  const anyDialog = indexOpen || bidOpen || zoomOpen
 
   const usedCategories = useMemo(() => categories.filter((c) => works.some((w) => w.category_id === c.id)), [categories, works])
   const activeCat = usedCategories.find((c) => c.slug === search.get('categoria')) ?? null
@@ -93,7 +96,7 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
 
   // Teclado (desactivado con un diálogo abierto: las flechas también mueven el cursor en los campos).
   useEffect(() => {
-    if (indexOpen || bidOpen || !current) return
+    if (anyDialog || !current) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight') step(1)
       else if (e.key === 'ArrowLeft') step(-1)
@@ -105,7 +108,7 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
   // Rueda del mouse en escritorio (una obra por gesto).
   const wheelLock = useRef(0)
   useEffect(() => {
-    if (indexOpen || bidOpen || !current) return
+    if (anyDialog || !current) return
     const onWheel = (e: WheelEvent) => {
       if (!window.matchMedia?.('(min-width: 821px)').matches) return
       if (Date.now() < wheelLock.current || Math.abs(e.deltaY) < 30) return
@@ -193,7 +196,7 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
           )}
         </section>
 
-        <Artwork current={current} dir={dir} onSwipe={step} />
+        <Artwork current={current} dir={dir} onSwipe={step} onZoom={() => setZoomOpen(true)} />
 
         <aside className="sc-side">
           {auction ? <AuctionSide auction={auction} /> : <>
@@ -224,6 +227,15 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
           )}
         </footer>
       </div>
+
+      {zoomOpen && current.cover && (
+        <ZoomViewer
+          image={current.cover}
+          title={current.title}
+          alt={current.cover.image_alt ?? `${current.title}${current.technique ? `, ${current.technique}` : ''}`}
+          onClose={() => setZoomOpen(false)}
+        />
+      )}
 
       {bidOpen && auction && (
         <BidDialog
@@ -281,7 +293,7 @@ function AuctionCta({ auction, onBid, whatsapp }: { auction: Auction; onBid: () 
 }
 
 /** La obra "colgada": entra en arco y la anterior sale; deslizar en móvil. */
-function Artwork({ current, dir, onSwipe }: { current: ShowcaseArtwork; dir: 1 | -1; onSwipe: (d: 1 | -1) => void }) {
+function Artwork({ current, dir, onSwipe, onZoom }: { current: ShowcaseArtwork; dir: 1 | -1; onSwipe: (d: 1 | -1) => void; onZoom: () => void }) {
   const [leaving, setLeaving] = useState<{ work: ShowcaseArtwork; dir: 1 | -1 } | null>(null)
   const prev = useRef(current)
   useEffect(() => {
@@ -305,19 +317,32 @@ function Artwork({ current, dir, onSwipe }: { current: ShowcaseArtwork; dir: 1 |
       }}
     >
       {leaving && <Piece key={`out-${leaving.work.id}`} work={leaving.work} className={`is-out${leaving.dir < 0 ? ' is-back' : ''}`} />}
-      <Piece key={current.id} work={current} className={`is-in${dir < 0 ? ' is-back' : ''}`} priority />
+      <Piece key={current.id} work={current} className={`is-in${dir < 0 ? ' is-back' : ''}`} priority onZoom={onZoom} />
+      {current.cover && (
+        // Botón explícito: en el celular, tocar la obra no la abre (se confundiría con deslizar).
+        <button type="button" className="sc-zoom-btn" aria-haspopup="dialog" onClick={onZoom}>
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+            <circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" strokeWidth="2" />
+            <path d="M15.5 15.5 21 21M10.5 7.5v6M7.5 10.5h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+          Ver detalle
+        </button>
+      )}
     </div>
   )
 }
 
-function Piece({ work, className, priority = false }: { work: ShowcaseArtwork; className: string; priority?: boolean }) {
+const FINE_POINTER = '(hover: hover) and (pointer: fine)'
+
+function Piece({ work, className, priority = false, onZoom }: { work: ShowcaseArtwork; className: string; priority?: boolean; onZoom?: () => void }) {
   const img = work.cover
   // La entrada se pausa hasta que la imagen carga: si no, se anima un marco vacío.
   const [loaded, setLoaded] = useState(!img || className.includes('is-out'))
   const markLoaded = () => setLoaded(true)
   return (
     <div className={`sc-piece ${className}${loaded ? '' : ' is-loading'}`} aria-hidden={className.includes('is-out') || undefined}>
-      <figure>
+      {/* En escritorio, clic en la obra también abre el visor. */}
+      <figure onClick={() => onZoom && img && window.matchMedia?.(FINE_POINTER).matches && onZoom()}>
         {img ? (
           <img
             ref={(el) => { if (el?.complete && el.naturalWidth > 0) markLoaded() }}

@@ -10,3 +10,8 @@ export function imageUrl(publicId: string, width: ImageWidth): string {
 export function imageSrcSet(publicId: string): string {
   return IMAGE_WIDTHS.map((w) => `${imageUrl(publicId, w)} ${w}w`).join(', ')
 }
+
+/** Versión grande para el visor de detalle (c_limit: nunca agranda más allá del original). */
+export function zoomImageUrl(publicId: string): string {
+  return `https://res.cloudinary.com/${env.cloudinaryCloudName}/image/upload/f_auto,q_auto:best,c_limit,w_2560/${publicId}`
+}

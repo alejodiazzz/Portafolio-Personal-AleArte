@@ -1,6 +1,6 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
-import { beforeEach, expect, test, vi } from 'vitest'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 
 const work = (i: number, over: Record<string, unknown> = {}) => ({
   id: `a${i}`, slug: `obra-${i}`, title: `Obra ${i}`, description: null, price: 100000, currency: 'COP',
@@ -58,7 +58,7 @@ test('muestra la primera obra con sus datos, contador, color y WhatsApp', async 
   expect(screen.getByTestId('showcase').style.getPropertyValue('--bg')).toBe('#183961')
   const cta = screen.getByRole('link', { name: /Lo quiero/ })
   expect(decodeURIComponent(cta.getAttribute('href')!)).toContain('"Obra 1": http://localhost:5173/obra/obra-1')
-  expect(document.title).toBe('Obra 1 · Ale Arte')
+  await waitFor(() => expect(document.title).toBe('Obra 1 · Ale Arte')) // se fija en un efecto
 })
 
 test('siguiente / anterior (botones y teclado) cambian la obra y la URL', async () => {
@@ -228,4 +228,47 @@ test('subasta con ofertas muestra la actual y el conteo; cerrada vuelve a WhatsA
   expect(screen.getByText('Subasta cerrada')).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: /Ofertar/ })).toBeNull()
   expect(screen.getByRole('link', { name: /Me interesa/ })).toHaveAttribute('href', expect.stringContaining('wa.me'))
+})
+
+describe('visor de detalle', () => {
+  const scaleOf = (el: HTMLElement) => Number(el.style.transform.match(/scale\(([\d.]+)\)/)?.[1] ?? 1)
+
+  test('el botón abre el visor en alta resolución; Escape lo cierra y devuelve el foco', async () => {
+    renderAt('/')
+    await screen.findByRole('heading', { name: 'Obra 1' })
+    const open = screen.getByRole('button', { name: /Ver detalle/ })
+    open.focus()
+    fireEvent.click(open)
+    const dialog = screen.getByRole('dialog', { name: 'Detalle de Obra 1' })
+    const img = within(dialog).getByRole('img', { name: /Obra 1/ })
+    expect(img.getAttribute('src')).toMatch(/w_(1600|2560)/)
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByRole('dialog', { name: /Detalle/ })).toBeNull()
+    expect(document.activeElement).toBe(open)
+  })
+
+  test('acercar, alejar y restablecer con botones y teclado; las flechas no cambian de obra', async () => {
+    renderAt('/')
+    await screen.findByRole('heading', { name: 'Obra 1' })
+    fireEvent.click(screen.getByRole('button', { name: /Ver detalle/ }))
+    const dialog = screen.getByRole('dialog')
+    const layer = dialog.querySelector<HTMLElement>('.sc-zoom-layer')!
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Acercar' }))
+    expect(scaleOf(layer)).toBeGreaterThan(1)
+    fireEvent.keyDown(window, { key: '+' })
+    const zoomed = scaleOf(layer)
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Alejar' }))
+    expect(scaleOf(layer)).toBeLessThan(zoomed)
+    fireEvent.keyDown(window, { key: '0' })
+    expect(scaleOf(layer)).toBe(1)
+    fireEvent.keyDown(window, { key: 'ArrowRight' })
+    expect(screen.getByRole('heading', { level: 1, name: 'Obra 1' })).toBeInTheDocument()
+  })
+
+  test('obra sin imagen: no hay botón de detalle', async () => {
+    listImpl = async () => [work(1, { cover: null })]
+    renderAt('/')
+    await screen.findByRole('heading', { name: 'Obra 1' })
+    expect(screen.queryByRole('button', { name: /Ver detalle/ })).toBeNull()
+  })
 })
