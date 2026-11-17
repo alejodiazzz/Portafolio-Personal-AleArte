@@ -27,6 +27,7 @@ const CTA: Record<ShowcaseArtwork['availability_status'], string> = {
 const num = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 2 })
 const pad = (n: number) => String(n).padStart(2, '0')
 const LEAVE_MS = 700
+const PIECE_SIZES = '(max-width: 820px) 92vw, 40vw'
 
 function sizeLabel(a: ShowcaseArtwork): string | null {
   if (a.height == null || a.width == null) return null
@@ -115,11 +116,19 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
     if (current) document.title = `${current.title} · Ale Arte`
   }, [current])
 
-  // Precarga la siguiente obra.
+  // Precarga las obras vecinas (ambos sentidos) con el mismo srcset/sizes que <Piece>,
+  // para que el navegador descargue exactamente la variante que va a mostrar.
   const next = list.length > 1 && index >= 0 ? list[(index + 1) % list.length] : null
+  const prevWork = list.length > 2 && index >= 0 ? list[(index - 1 + list.length) % list.length] : null
   useEffect(() => {
-    if (next?.cover) new Image().src = imageUrl(next.cover.storage_path, 1600)
-  }, [next])
+    for (const w of [next, prevWork]) {
+      if (!w?.cover) continue
+      const img = new Image()
+      img.sizes = PIECE_SIZES
+      img.srcset = imageSrcSet(w.cover.storage_path)
+      img.src = imageUrl(w.cover.storage_path, 1600)
+    }
+  }, [next, prevWork])
 
   if (!current)
     return (
@@ -245,14 +254,20 @@ function Artwork({ current, dir, onSwipe }: { current: ShowcaseArtwork; dir: 1 |
 
 function Piece({ work, className, priority = false }: { work: ShowcaseArtwork; className: string; priority?: boolean }) {
   const img = work.cover
+  // La entrada se pausa hasta que la imagen carga: si no, se anima un marco vacío.
+  const [loaded, setLoaded] = useState(!img || className.includes('is-out'))
+  const markLoaded = () => setLoaded(true)
   return (
-    <div className={`sc-piece ${className}`} aria-hidden={className.includes('is-out') || undefined}>
+    <div className={`sc-piece ${className}${loaded ? '' : ' is-loading'}`} aria-hidden={className.includes('is-out') || undefined}>
       <figure>
         {img ? (
           <img
+            ref={(el) => { if (el?.complete && el.naturalWidth > 0) markLoaded() }}
+            onLoad={markLoaded}
+            onError={markLoaded}
             src={imageUrl(img.storage_path, 1600)}
             srcSet={imageSrcSet(img.storage_path)}
-            sizes="(max-width: 820px) 92vw, 40vw"
+            sizes={PIECE_SIZES}
             alt={img.image_alt ?? `${work.title}${work.technique ? `, ${work.technique}` : ''}`}
             width={img.width ?? undefined}
             height={img.height ?? undefined}

@@ -134,3 +134,41 @@ test('error de red → mensaje genérico, sin detalles internos', async () => {
   expect(await screen.findByRole('alert')).toBeInTheDocument()
   expect(screen.queryByText(/private/)).toBeNull()
 })
+
+test('deslizar en ambos sentidos anima la entrada y la salida', async () => {
+  renderAt('/obra/obra-2')
+  await screen.findByRole('heading', { name: 'Obra 2' })
+  const art = document.querySelector('.sc-art')!
+  const swipe = (from: number, to: number) => {
+    fireEvent.touchStart(art, { touches: [{ clientX: from }] })
+    fireEvent.touchEnd(art, { changedTouches: [{ clientX: to }] })
+  }
+  swipe(300, 100) // hacia la izquierda → siguiente
+  expect(screen.getByRole('heading', { level: 1, name: 'Mural 3' })).toBeInTheDocument()
+  expect(document.querySelector('.sc-piece.is-out:not(.is-back)')).not.toBeNull()
+  expect(document.querySelector('.sc-piece.is-in:not(.is-back)')).not.toBeNull()
+  swipe(100, 300) // hacia la derecha → anterior
+  expect(screen.getByRole('heading', { level: 1, name: 'Obra 2' })).toBeInTheDocument()
+  expect(document.querySelector('.sc-piece.is-out.is-back')).not.toBeNull()
+  expect(document.querySelector('.sc-piece.is-in.is-back')).not.toBeNull()
+})
+
+test('la obra entrante espera a que cargue su imagen antes de animarse', async () => {
+  renderAt('/obra/obra-1')
+  await screen.findByRole('heading', { name: 'Obra 1' })
+  fireEvent.click(screen.getByRole('button', { name: 'Obra anterior' }))
+  const incoming = document.querySelector('.sc-piece.is-in')!
+  expect(incoming.classList.contains('is-loading')).toBe(true)
+  fireEvent.load(incoming.querySelector('img')!)
+  expect(incoming.classList.contains('is-loading')).toBe(false)
+})
+
+test('precarga la obra anterior y la siguiente con el mismo srcset que usa la página', async () => {
+  const seen: string[] = []
+  vi.stubGlobal('Image', class { sizes = ''; set srcset(v: string) { seen.push(v) } set src(_v: string) {} })
+  renderAt('/obra/obra-2')
+  await screen.findByRole('heading', { name: 'Obra 2' })
+  expect(seen.some((s) => s.includes('/a1/'))).toBe(true)
+  expect(seen.some((s) => s.includes('/a3/'))).toBe(true)
+  vi.unstubAllGlobals()
+})
