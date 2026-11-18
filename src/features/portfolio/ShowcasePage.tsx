@@ -347,15 +347,18 @@ function AuctionCta({ auction, onBid, whatsapp }: { auction: Auction; onBid: () 
 
 /** La obra "colgada": entra en arco y la anterior sale; deslizar en móvil. */
 function Artwork({ current, dir, onSwipe, onZoom }: { current: ShowcaseArtwork; dir: 1 | -1; onSwipe: (d: 1 | -1) => void; onZoom: () => void }) {
-  const [leaving, setLeaving] = useState<{ work: ShowcaseArtwork; dir: 1 | -1 } | null>(null)
-  const prev = useRef(current)
+  // La obra que sale se calcula durante el render (no en un efecto): así, en el mismo render en que entra
+  // la nueva, la anterior sigue montada y React conserva su elemento en vez de desmontarlo y recrearlo.
+  const [shown, setShown] = useState<{ id: string; work: ShowcaseArtwork; leaving: { work: ShowcaseArtwork; dir: 1 | -1 } | null }>(
+    { id: current.id, work: current, leaving: null },
+  )
+  if (shown.id !== current.id) setShown({ id: current.id, work: current, leaving: { work: shown.work, dir } })
+  const leaving = shown.id === current.id ? shown.leaving : { work: shown.work, dir }
   useEffect(() => {
-    if (prev.current.id === current.id) return
-    setLeaving({ work: prev.current, dir })
-    prev.current = current
-    const t = setTimeout(() => setLeaving(null), LEAVE_MS)
+    if (!shown.leaving) return
+    const t = setTimeout(() => setShown((s) => ({ ...s, leaving: null })), LEAVE_MS)
     return () => clearTimeout(t)
-  }, [current, dir])
+  }, [shown.leaving])
 
   const touchX = useRef<number | null>(null)
   return (
@@ -369,7 +372,11 @@ function Artwork({ current, dir, onSwipe, onZoom }: { current: ShowcaseArtwork; 
         if (Math.abs(d) > 50) onSwipe(d < 0 ? 1 : -1)
       }}
     >
-      {leaving && <Piece key={`out-${leaving.work.id}`} work={leaving.work} className={`is-out${leaving.dir < 0 ? ' is-back' : ''}`} />}
+      {/* Misma key que tenía al estar en pantalla: React reutiliza el elemento y su imagen ya decodificada.
+          Si se recreara, el celular tendría que volver a decodificarla y la obra que sale desaparecería de golpe. */}
+      {leaving && leaving.work.id !== current.id && (
+        <Piece key={leaving.work.id} work={leaving.work} className={`is-out${leaving.dir < 0 ? ' is-back' : ''}`} />
+      )}
       <Piece key={current.id} work={current} className={`is-in${dir < 0 ? ' is-back' : ''}`} priority onZoom={onZoom} />
       {current.cover && (
         // Botón explícito: en el celular, tocar la obra no la abre (se confundiría con deslizar).
@@ -400,7 +407,8 @@ function Piece({ work, className, priority = false, onZoom }: { work: ShowcaseAr
     el.decode().catch(() => {}).finally(() => { clearTimeout(t); markLoaded() })
   }
   return (
-    <div className={`sc-piece ${className}${loaded ? '' : ' is-loading'}`} aria-hidden={className.includes('is-out') || undefined}>
+    // Solo la que entra espera la carga; la que sale se anima siempre.
+    <div className={`sc-piece ${className}${loaded || className.includes('is-out') ? '' : ' is-loading'}`} aria-hidden={className.includes('is-out') || undefined}>
       {/* En escritorio, clic en la obra también abre el visor. */}
       <figure onClick={() => onZoom && img && window.matchMedia?.(FINE_POINTER).matches && onZoom()}>
         {img ? (

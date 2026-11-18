@@ -97,7 +97,7 @@ button.sc-cta:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 .sc-ig:hover { color: var(--ink); text-decoration-color: currentColor; }
 
 /* ── La obra ── */
-.sc-art { grid-column: 2; grid-row: 2; position: relative; min-height: 0; touch-action: pan-y; container-type: size; }
+.sc-art { grid-column: 2; grid-row: 2; position: relative; min-height: 0; touch-action: pan-y; overscroll-behavior-x: none; container-type: size; }
 .sc-piece { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .sc-piece figure { display: flex; justify-content: center; }
 /* La obra cabe en el área (unidades de contenedor) y la sombra queda pegada debajo. */

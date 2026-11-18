@@ -188,6 +188,20 @@ test('el srcset de la obra usa el ancho real del original', async () => {
   expect(document.querySelector('.sc-piece img')!.getAttribute('srcset')).toMatch(/ 700w$/)
 })
 
+test('la obra que sale es el mismo elemento que estaba en pantalla (no se recrea ni se vuelve a decodificar)', async () => {
+  renderAt('/')
+  await screen.findByRole('heading', { name: 'Obra 1' })
+  for (const dir of ['Obra siguiente', 'Obra anterior']) {
+    const shown = document.querySelector('.sc-piece.is-in')!
+    const shownImg = shown.querySelector('img')
+    fireEvent.click(screen.getByRole('button', { name: dir }))
+    const out = document.querySelector('.sc-piece.is-out')!
+    expect(out).toBe(shown)
+    expect(out.querySelector('img')).toBe(shownImg)
+    expect(out.classList.contains('is-loading')).toBe(false)
+  }
+})
+
 test('precarga la obra anterior y la siguiente con el mismo srcset que usa la página', async () => {
   const seen: string[] = []
   vi.stubGlobal('Image', class { sizes = ''; set srcset(v: string) { seen.push(v) } set src(_v: string) {} })
