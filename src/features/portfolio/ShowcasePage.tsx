@@ -134,8 +134,10 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
       if (!w?.cover) continue
       const img = new Image()
       img.sizes = PIECE_SIZES
-      img.srcset = imageSrcSet(w.cover.storage_path)
+      img.srcset = imageSrcSet(w.cover.storage_path, w.cover.width)
       img.src = imageUrl(w.cover.storage_path, 1600)
+      // Decodificar de antemano: en el celular, decodificar al llegar es lo que dejaba el marco vacío.
+      img.decode?.().catch(() => {})
     }
   }, [next, prevWork])
 
@@ -390,17 +392,24 @@ function Piece({ work, className, priority = false, onZoom }: { work: ShowcaseAr
   // La entrada se pausa hasta que la imagen carga: si no, se anima un marco vacío.
   const [loaded, setLoaded] = useState(!img || className.includes('is-out'))
   const markLoaded = () => setLoaded(true)
+  // "Cargada" = descargada y decodificada (lista para pintarse). Tope de 1,5 s para no quedarse esperando.
+  const whenReady = (el: HTMLImageElement) => {
+    if (loaded) return
+    if (!el.decode) return markLoaded()
+    const t = setTimeout(markLoaded, 1500)
+    el.decode().catch(() => {}).finally(() => { clearTimeout(t); markLoaded() })
+  }
   return (
     <div className={`sc-piece ${className}${loaded ? '' : ' is-loading'}`} aria-hidden={className.includes('is-out') || undefined}>
       {/* En escritorio, clic en la obra también abre el visor. */}
       <figure onClick={() => onZoom && img && window.matchMedia?.(FINE_POINTER).matches && onZoom()}>
         {img ? (
           <img
-            ref={(el) => { if (el?.complete && el.naturalWidth > 0) markLoaded() }}
-            onLoad={markLoaded}
+            ref={(el) => { if (el?.complete && el.naturalWidth > 0) whenReady(el) }}
+            onLoad={(e) => whenReady(e.currentTarget)}
             onError={markLoaded}
             src={imageUrl(img.storage_path, 1600)}
-            srcSet={imageSrcSet(img.storage_path)}
+            srcSet={imageSrcSet(img.storage_path, img.width)}
             sizes={PIECE_SIZES}
             alt={img.image_alt ?? `${work.title}${work.technique ? `, ${work.technique}` : ''}`}
             width={img.width ?? undefined}

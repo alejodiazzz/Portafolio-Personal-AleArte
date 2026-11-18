@@ -165,6 +165,29 @@ test('la obra entrante espera a que cargue su imagen antes de animarse', async (
   expect(incoming.classList.contains('is-loading')).toBe(false)
 })
 
+test('la entrada espera a que la imagen esté decodificada (no anima un marco vacío)', async () => {
+  let finish!: () => void
+  // jsdom no implementa decode(): se define solo para esta prueba.
+  const proto = HTMLImageElement.prototype as { decode?: () => Promise<void> }
+  proto.decode = () => new Promise<void>((r) => { finish = r })
+  renderAt('/')
+  await screen.findByRole('heading', { name: 'Obra 1' })
+  fireEvent.click(screen.getByRole('button', { name: 'Obra siguiente' }))
+  const incoming = document.querySelector('.sc-piece.is-in')!
+  fireEvent.load(incoming.querySelector('img')!)
+  expect(incoming.classList.contains('is-loading')).toBe(true)
+  finish()
+  await waitFor(() => expect(incoming.classList.contains('is-loading')).toBe(false))
+  delete proto.decode
+})
+
+test('el srcset de la obra usa el ancho real del original', async () => {
+  listImpl = async () => [work(1, { cover: { ...work(1).cover, width: 700, height: 900 } })]
+  renderAt('/')
+  await screen.findByRole('heading', { name: 'Obra 1' })
+  expect(document.querySelector('.sc-piece img')!.getAttribute('srcset')).toMatch(/ 700w$/)
+})
+
 test('precarga la obra anterior y la siguiente con el mismo srcset que usa la página', async () => {
   const seen: string[] = []
   vi.stubGlobal('Image', class { sizes = ''; set srcset(v: string) { seen.push(v) } set src(_v: string) {} })

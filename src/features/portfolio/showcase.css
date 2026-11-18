@@ -102,7 +102,7 @@ button.sc-cta:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 .sc-piece figure { display: flex; justify-content: center; }
 /* La obra cabe en el área (unidades de contenedor) y la sombra queda pegada debajo. */
 .sc-piece img, .sc-noimg {
-  display: block; max-width: 100cqw; max-height: calc(100cqh - 46px); width: auto; height: auto; object-fit: contain;
+  display: block; max-width: 100cqw; max-height: calc(100cqh - var(--reserve, 46px)); width: auto; height: auto; object-fit: contain;
   padding: clamp(10px, 1.6vw, 22px); background: var(--mat);
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 30px 50px -28px rgba(0, 0, 0, 0.55), 0 8px 16px -10px rgba(0, 0, 0, 0.3);
 }
@@ -282,7 +282,9 @@ button.sc-cta:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 
   .sc-title { grid-area: title; margin-top: 18px; text-align: center; font-size: clamp(28px, 8.4vw, 40px); line-height: 1.06; text-wrap: balance; }
   .sc-sub { display: block; grid-area: sub; margin-top: 8px; text-align: center; font-size: 13px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
-  .sc-art { grid-area: art; height: auto; margin: 8px -6px 0; }
+  .sc-art { grid-area: art; height: auto; margin: 8px -6px 0; --reserve: 100px; }
+  /* La obra deja libre la franja inferior de "Ver detalle" y la miniatura siguiente. */
+  .sc-piece { bottom: 54px; }
 
   .sc-actions { grid-area: actions; justify-self: center; margin: 8px 0 0; }
   .sc-actions .sc-cta { padding: 12px 24px; box-shadow: 0 12px 28px -14px rgba(0, 0, 0, 0.6); }
