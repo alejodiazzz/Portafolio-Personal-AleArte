@@ -272,3 +272,52 @@ describe('visor de detalle', () => {
     expect(screen.queryByRole('button', { name: /Ver detalle/ })).toBeNull()
   })
 })
+
+describe('vista compacta (móvil)', () => {
+  test('línea breve bajo el título: técnica y precio, o estado', async () => {
+    renderAt('/')
+    await screen.findByRole('heading', { name: 'Obra 1' })
+    expect(document.querySelector('.sc-sub')?.textContent).toBe('Técnica 1 · $ 100.000 COP')
+    fireEvent.click(screen.getByRole('button', { name: 'Obra siguiente' }))
+    expect(document.querySelector('.sc-sub')?.textContent).toBe('Técnica 2 · Por encargo')
+  })
+
+  test('en subasta, la línea muestra la oferta y el cierre', async () => {
+    listImpl = async () => [work(1, { auction: {
+      artwork_id: 'a1', starting_price: 200000, min_increment: 20000, ends_at: new Date(Date.now() + 3 * 3_600_000).toISOString(),
+      current_amount: 260000, bid_count: 3, is_active: true } })]
+    renderAt('/')
+    await screen.findByRole('heading', { name: 'Obra 1' })
+    expect(document.querySelector('.sc-sub')?.textContent).toMatch(/^Subasta · \$ 260\.000 · cierra en 2 h 59 min|^Subasta · \$ 260\.000 · cierra en 3 h 0 min/)
+  })
+
+  test('el botón Detalles abre una hoja con descripción, medidas y enlaces', async () => {
+    listImpl = async () => [work(1, { description: 'Grafito sobre papel.', instagram_url: 'https://www.instagram.com/p/DAbc123/' })]
+    renderAt('/')
+    await screen.findByRole('heading', { name: 'Obra 1' })
+    const btn = screen.getByRole('button', { name: 'Detalles de la obra' })
+    btn.focus()
+    fireEvent.click(btn)
+    const sheet = screen.getByRole('dialog', { name: 'Detalles de Obra 1' })
+    expect(within(sheet).getByText('Grafito sobre papel.')).toBeInTheDocument()
+    expect(within(sheet).getByText('30 × 20 cm')).toBeInTheDocument()
+    expect(within(sheet).getByText('Pinturas acrílicas')).toBeInTheDocument()
+    expect(within(sheet).getByRole('link', { name: /Ver en Instagram/ })).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 'ArrowRight' }) // con la hoja abierta no cambia de obra
+    expect(screen.getByRole('heading', { level: 1, name: 'Obra 1' })).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(document.activeElement).toBe(btn)
+  })
+
+  test('el índice también filtra por categoría', async () => {
+    renderAt('/')
+    await screen.findByRole('heading', { name: 'Obra 1' })
+    fireEvent.click(screen.getByRole('button', { name: /Índice/ }))
+    const dialog = screen.getByRole('dialog', { name: 'Índice de obras' })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Murales' }))
+    expect(within(dialog).queryByRole('button', { name: /Obra 1/ })).toBeNull()
+    fireEvent.click(within(dialog).getByRole('button', { name: /Mural 3/ }))
+    expect(screen.getByTestId('where').textContent).toBe('/obra/obra-3?categoria=murales')
+  })
+})

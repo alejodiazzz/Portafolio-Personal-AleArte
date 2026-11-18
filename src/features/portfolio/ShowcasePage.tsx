@@ -15,6 +15,7 @@ import { portfolioApi, type ShowcaseArtwork } from './api'
 import { auctionView, formatCountdown, money, useLiveAuction, useNow } from './auction'
 import { BidDialog } from './BidDialog'
 import { BrandIcon } from './BrandIcon'
+import { DetailsSheet } from './DetailsSheet'
 import { IndexDialog } from './IndexDialog'
 import { ZoomViewer } from './ZoomViewer'
 
@@ -68,7 +69,8 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
   const [indexOpen, setIndexOpen] = useState(false)
   const [bidOpen, setBidOpen] = useState(false)
   const [zoomOpen, setZoomOpen] = useState(false)
-  const anyDialog = indexOpen || bidOpen || zoomOpen
+  const [infoOpen, setInfoOpen] = useState(false)
+  const anyDialog = indexOpen || bidOpen || zoomOpen || infoOpen
 
   const usedCategories = useMemo(() => categories.filter((c) => works.some((w) => w.category_id === c.id)), [categories, works])
   const activeCat = usedCategories.find((c) => c.slug === search.get('categoria')) ?? null
@@ -180,15 +182,25 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
             <span className="sc-count">{pad(index + 1)} / {pad(list.length)}</span>
           </div>
           <h1 className="sc-title">{current.title}</h1>
+          <SubLine work={current} auction={auction} />
           {current.technique && <p className="sc-tech">{current.technique}</p>}
           {current.description && <p className="sc-desc">{current.description}</p>}
-          {auction ? (
-            <AuctionCta auction={auction} onBid={() => setBidOpen(true)} whatsapp={buildWhatsAppLink({ artworkTitle: current.title, artworkUrl: url })} />
-          ) : (
-            <a className="sc-cta" href={buildWhatsAppLink({ artworkTitle: current.title, artworkUrl: url })} target="_blank" rel="noopener noreferrer">
-              {CTA[current.availability_status]} <span aria-hidden="true">→</span>
-            </a>
-          )}
+          <div className="sc-actions">
+            {auction ? (
+              <AuctionCta auction={auction} onBid={() => setBidOpen(true)} whatsapp={buildWhatsAppLink({ artworkTitle: current.title, artworkUrl: url })} />
+            ) : (
+              <a className="sc-cta" href={buildWhatsAppLink({ artworkTitle: current.title, artworkUrl: url })} target="_blank" rel="noopener noreferrer">
+                {CTA[current.availability_status]} <span aria-hidden="true">→</span>
+              </a>
+            )}
+            {/* Solo visible en móvil: abre la ficha completa. */}
+            <button type="button" className="sc-more" aria-label="Detalles de la obra" aria-haspopup="dialog" onClick={() => setInfoOpen(true)}>
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                <circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" strokeWidth="1.8" />
+                <path d="M12 11v6M12 7.2v.1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
           {current.instagram_url && (
             <a className="sc-ig" href={current.instagram_url} target="_blank" rel="noopener noreferrer">
               <BrandIcon name="instagram" size={16} /> Ver en Instagram
@@ -228,6 +240,28 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
         </footer>
       </div>
 
+      {infoOpen && (
+        <DetailsSheet title={current.title} onClose={() => setInfoOpen(false)}>
+          {current.technique && <p className="sc-tech">{current.technique}</p>}
+          <div className="sc-sheet-price">
+            {auction ? <AuctionSide auction={auction} /> : <>
+              <p className="sc-price">{price}</p>
+              <p className={`sc-status is-${current.availability_status}`}><i aria-hidden="true" />{STATUS[current.availability_status]}</p>
+            </>}
+          </div>
+          {current.description && <p className="sc-desc">{current.description}</p>}
+          <dl className="sc-specs">
+            {size && <div><dt>Medidas</dt><dd>{size}</dd></div>}
+            {category && <div><dt>Categoría</dt><dd>{category.name}</dd></div>}
+          </dl>
+          {current.instagram_url && (
+            <a className="sc-ig" href={current.instagram_url} target="_blank" rel="noopener noreferrer">
+              <BrandIcon name="instagram" size={16} /> Ver en Instagram
+            </a>
+          )}
+        </DetailsSheet>
+      )}
+
       {zoomOpen && current.cover && (
         <ZoomViewer
           image={current.cover}
@@ -249,16 +283,33 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
 
       {indexOpen && (
         <IndexDialog
-          works={list}
+          works={works}
+          categories={usedCategories}
+          initialCategory={activeCat}
           onClose={() => setIndexOpen(false)}
-          onPick={(w) => {
+          onPick={(w, cat) => {
             setIndexOpen(false)
             setDir(1)
-            go(w)
+            go(w, cat)
           }}
         />
       )}
     </Frame>
+  )
+}
+
+/** Línea breve bajo el título (vista móvil): técnica y precio, o el estado de la subasta. */
+function SubLine({ work, auction }: { work: ShowcaseArtwork; auction: Auction | null }) {
+  if (auction) return <AuctionLine auction={auction} />
+  const price = work.availability_status === 'available' && work.price != null ? priceLabel(work) : STATUS[work.availability_status]
+  return <p className="sc-sub">{[work.technique, price].filter(Boolean).join(' · ')}</p>
+}
+function AuctionLine({ auction }: { auction: Auction }) {
+  const v = auctionView(auction, useNow())
+  return (
+    <p className="sc-sub" aria-live="off">
+      {v.open ? `Subasta · ${money(v.amount)} · cierra en ${formatCountdown(v.msLeft)}` : `Subasta cerrada · ${money(v.amount)}`}
+    </p>
   )
 }
 

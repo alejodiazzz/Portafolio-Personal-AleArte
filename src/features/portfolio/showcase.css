@@ -28,6 +28,7 @@
   --glass: rgba(255, 255, 255, 0.38);
 }
 .sc *, .sc *::before, .sc *::after { box-sizing: border-box; }
+body:has(> #root > .sc) { margin: 0; } /* sin el margen por defecto del navegador: la vista cabe exacta en la pantalla */
 .sc :where(h1, h2, p, dl, dd, figure, ul) { margin: 0; padding: 0; }
 .sc a { color: inherit; }
 .sc button { font: inherit; color: inherit; }
@@ -234,22 +235,69 @@ button.sc-cta:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 .sc-bid-form .sc-cta, .sc-bid-done .sc-cta { justify-content: center; margin-top: 16px; width: 100%; }
 .sc-bid-done p { margin-top: 10px; font-size: 15px; line-height: 1.6; color: var(--ink-soft); }
 
+/* ── Ficha en hoja inferior (móvil) ── */
+.sc-sub, .sc-more { display: none; }
+.sc-actions { display: flex; align-items: center; gap: 10px; margin-top: 28px; }
+.sc-actions .sc-cta { margin-top: 0; }
+.sc-sheet-backdrop {
+  position: fixed; inset: 0; z-index: 35; display: flex; align-items: flex-end; justify-content: center;
+  background: rgba(0, 0, 0, 0.45); animation: sc-fade 0.25s both;
+}
+.sc-sheet {
+  width: min(560px, 100%); max-height: 85dvh; overflow: auto; padding: 10px 22px max(26px, env(safe-area-inset-bottom));
+  border-radius: 22px 22px 0 0; background: color-mix(in srgb, var(--bg) 86%, #000); color: var(--ink);
+  box-shadow: 0 -20px 50px -20px rgba(0, 0, 0, 0.5); animation: sc-sheet-up 0.4s var(--ease) both;
+}
+@keyframes sc-sheet-up { from { transform: translateY(100%); } to { transform: none; } }
+.sc-sheet-grip { width: 40px; height: 4px; margin: 0 auto 14px; border-radius: 2px; background: var(--line); }
+.sc-sheet-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.sc-sheet-head h2 { font-family: var(--display); font-weight: 400; font-size: 28px; line-height: 1.1; }
+.sc-sheet .sc-tech { margin-top: 4px; }
+.sc-sheet-price { margin-top: 20px; }
+.sc-sheet .sc-desc { max-width: none; }
+.sc-sheet .sc-specs { grid-auto-flow: column; justify-content: start; gap: 28px; margin-top: 20px; text-align: left; }
+
+/* Categorías dentro del índice */
+.sc-index-cats { display: flex; gap: 6px; margin: -8px 0 24px; overflow-x: auto; scrollbar-width: none; }
+.sc-index-cats button {
+  flex: none; padding: 8px 14px; border: 1px solid var(--line); border-radius: 999px; background: transparent;
+  color: var(--ink-soft); font: 500 13px var(--body); cursor: pointer;
+}
+.sc-index-cats button[aria-pressed='true'] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+
+/* ── Móvil: una sola pantalla, como un cartel ──
+   marca e índice · título · línea breve · obra (con "siguiente" y "ver detalle") · botón · redes */
 @media (max-width: 820px) {
-  .sc-stage { height: auto; min-height: 100dvh; overflow: visible; grid-template-columns: minmax(0, 1fr); grid-template-rows: none; padding: 16px 16px 104px; }
-  .sc-header { flex-wrap: wrap; order: -2; }
-  .sc-pills { order: 3; width: 100%; }
-  .sc-art { grid-column: 1; grid-row: auto; order: -1; height: 56dvh; margin: 14px 0 6px; }
-  .sc-info, .sc-side { grid-column: 1; grid-row: auto; max-width: none; }
-  .sc-nav { margin: 4px 0 14px; }
-  .sc-side { justify-self: stretch; text-align: left; margin-top: 22px; }
-  .sc-specs { grid-auto-flow: column; justify-content: start; gap: 24px; margin-top: 14px; }
-  .sc-info > .sc-cta {
-    position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 10; justify-content: center; margin: 0;
-    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  .sc-stage {
+    height: 100dvh; overflow: hidden; gap: 0;
+    padding: max(14px, env(safe-area-inset-top)) 18px max(12px, env(safe-area-inset-bottom));
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
+    grid-template-areas: 'header' 'title' 'sub' 'art' 'actions' 'social';
   }
-  .sc-footer { grid-template-columns: 1fr; justify-items: start; margin-top: 32px; }
-  .sc-motto { text-align: left; }
-  .sc-next { justify-self: start; }
+  .sc-header { grid-area: header; }
+  .sc-pills { display: none; }
+  .sc-info, .sc-side, .sc-footer { display: contents; }
+  .sc-info > .sc-nav, .sc-info > .sc-tech, .sc-info > .sc-desc, .sc-info > .sc-ig, .sc-side > *, .sc-footer > .sc-motto { display: none; }
+
+  .sc-title { grid-area: title; margin-top: 18px; text-align: center; font-size: clamp(28px, 8.4vw, 40px); line-height: 1.06; text-wrap: balance; }
+  .sc-sub { display: block; grid-area: sub; margin-top: 8px; text-align: center; font-size: 13px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .sc-art { grid-area: art; height: auto; margin: 8px -6px 0; }
+
+  .sc-actions { grid-area: actions; justify-self: center; margin: 8px 0 0; }
+  .sc-actions .sc-cta { padding: 12px 24px; box-shadow: 0 12px 28px -14px rgba(0, 0, 0, 0.6); }
+  .sc-more {
+    display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 50%;
+    background: var(--glass); backdrop-filter: blur(10px); color: var(--ink); cursor: pointer;
+  }
+  .sc-social { grid-area: social; justify-self: center; margin: 8px 0 0; }
+
+  /* La siguiente obra espera abajo a la derecha, sobre el área de la obra. */
+  .sc-next { grid-area: art; justify-self: end; align-self: end; z-index: 3; margin: 0 2px 6px 0; }
+  .sc-next span { display: none; }
+  .sc-next img { width: 52px; height: 52px; }
+  .sc-zoom-btn { left: 2px; bottom: 8px; transform: none; padding: 8px 12px; }
+  .sc-zoom-btn:hover { transform: translateY(-2px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -257,4 +305,5 @@ button.sc-cta:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
   .sc-piece.is-in, .sc-piece.is-in .sc-floor { animation: sc-fade 0.3s both; }
   .sc-piece.is-out { animation: none; opacity: 0; }
   .sc-status.is-auction i { animation: none; }
+  .sc-sheet { animation: sc-fade 0.2s both; }
 }
