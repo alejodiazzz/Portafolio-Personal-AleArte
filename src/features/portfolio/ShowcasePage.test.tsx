@@ -67,7 +67,8 @@ test('siguiente / anterior (botones y teclado) cambian la obra y la URL', async 
   fireEvent.click(screen.getByRole('button', { name: 'Obra siguiente' }))
   expect(screen.getByRole('heading', { level: 1, name: 'Obra 2' })).toBeInTheDocument()
   expect(screen.getByTestId('where').textContent).toBe('/obra/obra-2')
-  expect(screen.getByText('Cotiza la tuya', { selector: '.sc-price' })).toBeInTheDocument()
+  // Sin precio numérico, la columna de datos no repite el botón: dice el precio en texto discreto.
+  expect(screen.getByText('Precio a convenir', { selector: '.sc-price.is-text' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: /Cotiza la tuya/ })).toBeInTheDocument()
   expect(screen.getByText('Por encargo.')).toBeInTheDocument()
   fireEvent.keyDown(window, { key: 'ArrowRight' })

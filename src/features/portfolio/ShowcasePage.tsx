@@ -214,10 +214,10 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
 
         <aside className="sc-side">
           {auction ? <AuctionSide auction={auction} /> : <>
-          <p className="sc-price">
-            {current.availability_status === 'available' && current.price != null ? price.replace(/ COP$/, '') : price}
-            {current.availability_status === 'available' && current.price != null && <small> COP</small>}
-          </p>
+          {current.availability_status === 'available' && current.price != null
+            ? <p className="sc-price">{price.replace(/ COP$/, '')}<small> COP</small></p>
+            // Sin cifra: texto discreto, no el mismo "Cotiza la tuya" del botón a tamaño de precio.
+            : <p className="sc-price is-text">{current.availability_status === 'commission' ? 'Precio a convenir' : price}</p>}
           <p className={`sc-status is-${current.availability_status}`}><i aria-hidden="true" />{STATUS[current.availability_status]}</p>
           </>}
           <dl className="sc-specs">
