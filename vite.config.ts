@@ -52,6 +52,8 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_')
   return {
     plugins: [react(), headersPlugin(env.VITE_SUPABASE_URL ?? process.env.VITE_SUPABASE_URL)],
+    // Las fuentes pequeñas (<4 KB) se incrustaban como data: y la CSP (font-src 'self') las bloqueaba.
+    build: { assetsInlineLimit: (file: string) => (/\.(woff2?|ttf|otf)$/.test(file) ? false : undefined) },
     test: {
       environment: 'jsdom',
       include: ['src/**/*.test.{ts,tsx}', 'tests/unit/**/*.test.ts'],
