@@ -162,7 +162,7 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
     <Frame color={backgroundOf(current.cover)}>
       <div className="sc-stage">
         <header className="sc-header">
-          <Link to="/" className="sc-brand">Ale Arte</Link>
+          <Link to="/" className="sc-brand" aria-label="Alejandro Díaz · Ale Arte"><span className="sc-signature" aria-hidden="true" /></Link>
           <nav ref={pillsRef} className="sc-pills" aria-label="Categorías">
             <button type="button" aria-pressed={!activeCat} onClick={() => go(works[0], null)}>Todas</button>
             {usedCategories.map((c) => (

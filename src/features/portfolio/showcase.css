@@ -54,7 +54,13 @@ body:has(> #root > .sc) { margin: 0; } /* sin el margen por defecto del navegado
   padding: 28px clamp(20px, 4vw, 56px);
 }
 .sc-header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.sc-brand { font-family: var(--display); font-size: 21px; font-weight: 500; text-decoration: none; white-space: nowrap; }
+.sc-brand { display: inline-flex; align-items: center; min-height: 44px; flex: none; text-decoration: none; }
+/* Firma de Ale como máscara: toma el color del texto, así se lee sobre cualquier fondo. */
+.sc-signature {
+  display: block; height: 40px; aspect-ratio: 475 / 150; background: currentColor;
+  -webkit-mask: url('../../assets/firma.png') center / contain no-repeat;
+  mask: url('../../assets/firma.png') center / contain no-repeat;
+}
 .sc-pills {
   display: flex; gap: 4px; padding: 5px; border-radius: 999px; background: var(--track);
   backdrop-filter: blur(14px); overflow-x: auto; scrollbar-width: none; max-width: 100%;
@@ -294,6 +300,7 @@ button.sc-cta:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
     grid-template-areas: 'header' 'title' 'sub' 'art' 'actions' 'social';
   }
   .sc-header { grid-area: header; }
+  .sc-signature { height: 34px; }
   .sc-pills { display: none; }
   .sc-info, .sc-side, .sc-footer { display: contents; }
   .sc-info > .sc-nav, .sc-info > .sc-tech, .sc-info > .sc-desc, .sc-info > .sc-ig, .sc-side > *, .sc-footer > .sc-motto { display: none; }

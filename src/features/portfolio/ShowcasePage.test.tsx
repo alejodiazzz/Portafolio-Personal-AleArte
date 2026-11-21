@@ -87,6 +87,14 @@ test('el color de fondo elegido en el panel gana al automático', async () => {
   expect(screen.getByTestId('showcase').style.getPropertyValue('--bg')).toBe('#7a1f2b')
 })
 
+test('la marca es la firma (imagen) y conserva el nombre para lectores de pantalla', async () => {
+  renderAt('/')
+  await screen.findByRole('heading', { name: 'Obra 1' })
+  const brand = screen.getByRole('link', { name: 'Alejandro Díaz · Ale Arte' })
+  expect(brand).toHaveAttribute('href', '/')
+  expect(brand.querySelector('.sc-signature')).not.toBeNull()
+})
+
 test('fondo claro → texto oscuro', async () => {
   renderAt('/obra/obra-3')
   await screen.findByRole('heading', { name: 'Mural 3' })
