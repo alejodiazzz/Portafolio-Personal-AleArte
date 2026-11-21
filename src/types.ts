@@ -24,6 +24,8 @@ export type ArtworkImage = {
   display_order: number
   /** #rrggbb calculado al subir; null en imágenes antiguas. */
   dominant_color: string | null
+  /** #rrggbb elegido en el panel; si existe, reemplaza al automático. */
+  custom_color: string | null
   created_at: string
 }
 

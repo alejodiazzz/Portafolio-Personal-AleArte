@@ -7,7 +7,7 @@ export const SHOWCASE_LIMIT = 300
 const COLUMNS =
   'id, slug, title, description, price, currency, height, width, measurement_unit, technique, category_id, creation_date, availability_status, display_order, created_at, instagram_url'
 export const AUCTION_COLUMNS = 'artwork_id, starting_price, min_increment, ends_at, current_amount, bid_count, is_active'
-const IMAGE_COLUMNS = 'id, artwork_id, storage_path, image_alt, width, height, is_cover, display_order, dominant_color'
+const IMAGE_COLUMNS = 'id, artwork_id, storage_path, image_alt, width, height, is_cover, display_order, dominant_color, custom_color'
 
 export type ShowcaseArtwork = PublicArtwork & { cover: ArtworkImage | null; auction: Auction | null }
 

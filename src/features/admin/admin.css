@@ -162,3 +162,11 @@
 .ad-images .ad-badge { justify-self: start; }
 .ad-images input[type='file'] { max-width: 100%; }
 .ad-images label { min-width: 0; }
+
+/* Fondo del escaparate por imagen: muestra + selector + volver al automático */
+.ad-bg { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
+.ad-bg-swatch { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: #fff; font-family: var(--display); font-size: 18px; }
+.ad-bg-swatch.is-light { color: var(--ink); }
+.ad-bg label { display: inline-flex; gap: 8px; align-items: center; }
+.ad-bg input[type='color'] { width: 44px; height: 44px; padding: 2px; border: 1px solid var(--line); border-radius: 8px; background: #fff; cursor: pointer; }
+.ad-bg-note { font-size: 13px; color: var(--ink-soft); }

@@ -7,7 +7,7 @@ const work = (i: number, over: Record<string, unknown> = {}) => ({
   height: 30, width: 20, measurement_unit: 'cm', technique: `Técnica ${i}`, category_id: 'c1', creation_date: null,
   availability_status: 'available', display_order: i, created_at: '', instagram_url: null, auction: null,
   cover: { id: `i${i}`, artwork_id: `a${i}`, storage_path: `ale-arte/artworks/a${i}/x`, image_alt: null, width: 800, height: 1000,
-    is_cover: true, display_order: 0, dominant_color: '#183961' },
+    is_cover: true, display_order: 0, dominant_color: '#183961', custom_color: null },
   ...over,
 })
 const CATS = [
@@ -77,6 +77,13 @@ test('siguiente / anterior (botones y teclado) cambian la obra y la URL', async 
   expect(screen.getByRole('heading', { level: 1, name: 'Obra 1' })).toBeInTheDocument() // vuelve al inicio
   fireEvent.click(screen.getByRole('button', { name: 'Obra anterior' }))
   expect(screen.getByRole('heading', { level: 1, name: 'Mural 3' })).toBeInTheDocument()
+})
+
+test('el color de fondo elegido en el panel gana al automático', async () => {
+  listImpl = async () => [work(1, { cover: { ...work(1).cover, custom_color: '#7a1f2b' } })]
+  renderAt('/')
+  await screen.findByRole('heading', { name: 'Obra 1' })
+  expect(screen.getByTestId('showcase').style.getPropertyValue('--bg')).toBe('#7a1f2b')
 })
 
 test('fondo claro → texto oscuro', async () => {

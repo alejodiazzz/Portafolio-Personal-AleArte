@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { DEFAULT_BG, dominantColor, isLightColor, safeColor } from './color'
+import { DEFAULT_BG, backgroundOf, dominantColor, isLightColor, safeColor } from './color'
 
 /** Construye RGBA a partir de [color, cantidad de píxeles]. */
 function pixels(...parts: [[number, number, number], number][]): Uint8ClampedArray {
@@ -62,6 +62,18 @@ describe('isLightColor', () => {
   test('claro y oscuro', () => {
     expect(isLightColor('#f0e8d8')).toBe(true)
     expect(isLightColor('#1f3b7a')).toBe(false)
+  })
+  test('tonos medios (color elegido a mano) usan texto oscuro: con blanco no llegarían a 4.5:1', () => {
+    expect(isLightColor('#808080')).toBe(true)
+    expect(isLightColor('#3a6ea5')).toBe(false)
+  })
+})
+
+describe('backgroundOf', () => {
+  test('el color personalizado gana; si no hay, el automático', () => {
+    expect(backgroundOf({ dominant_color: '#183961', custom_color: '#aa3300' })).toBe('#aa3300')
+    expect(backgroundOf({ dominant_color: '#183961', custom_color: null })).toBe('#183961')
+    expect(backgroundOf(null)).toBeNull()
   })
 })
 

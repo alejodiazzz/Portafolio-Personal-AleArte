@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { reorder, type Direction } from '../../lib/order'
+import { isHexColor } from '../../lib/color'
 import { supabase } from '../../lib/supabase'
 import { uploadArtworkImage } from '../../lib/upload'
 import type { Artwork, ArtworkImage, Auction, AuctionBid, AvailabilityStatus, Category, PublicationStatus } from '../../types'
@@ -75,6 +76,13 @@ export function createAdminApi(db: SupabaseClient) {
     check(await db.from('artwork_images').update({ image_alt: image_alt.trim().slice(0, 250) || null }).eq('id', imageId).select('id'))
   }
 
+  /** Fondo del escaparate elegido a mano (#rrggbb); null vuelve al color automático. */
+  const setImageColor = async (imageId: string, color: string | null) => {
+    const custom_color = color === null ? null : color.toLowerCase()
+    if (custom_color !== null && !isHexColor(custom_color)) throw new Error('Color no válido')
+    check(await db.from('artwork_images').update({ custom_color }).eq('id', imageId).select('id'))
+  }
+
   const deleteImage = async (imageId: string) => {
     const { error } = await db.functions.invoke('media-delete', { body: { imageId } })
     if (error) throw error
@@ -94,6 +102,8 @@ export function createAdminApi(db: SupabaseClient) {
       isCover: old.is_cover,
       displayOrder: old.display_order,
     })
+    // El fondo elegido a mano se conserva al cambiar la foto.
+    if (old.custom_color) await setImageColor(created.id, old.custom_color)
     await deleteImage(imageId)
     return created
   }
@@ -137,7 +147,7 @@ export function createAdminApi(db: SupabaseClient) {
   return {
     listCovers, getAuction, saveAuction, deleteAuction, listBids, deleteBid,
     adminListArtworks, adminGetArtwork, createArtwork, updateArtwork, deleteArtwork, setPublication, setAvailability,
-    moveArtwork, takenSlugs, uploadImage, setCover, updateImageAlt, deleteImage, moveImage, replaceImage,
+    moveArtwork, takenSlugs, uploadImage, setCover, updateImageAlt, setImageColor, deleteImage, moveImage, replaceImage,
     listCategories, createCategory, updateCategory, deleteCategory, moveCategory,
   }
 }

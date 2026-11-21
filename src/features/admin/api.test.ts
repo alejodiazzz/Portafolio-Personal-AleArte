@@ -19,6 +19,15 @@ test('setCover desmarca la portada anterior antes de marcar la nueva', async () 
   const updates = f.calls.filter((c) => c.method === 'update').map((c) => c.args[0])
   expect(updates).toEqual([{ is_cover: false }, { is_cover: true }])
 })
+test('setImageColor guarda #rrggbb en custom_color; null vuelve al automático', async () => {
+  const f = fakeSupabase({ artwork_images: [{ id: 'i1' }] })
+  const api = createAdminApi(f.client as never)
+  await api.setImageColor('i1', '#AA3300')
+  await api.setImageColor('i1', null)
+  const updates = f.calls.filter((c) => c.method === 'update').map((c) => c.args[0])
+  expect(updates).toEqual([{ custom_color: '#aa3300' }, { custom_color: null }])
+  await expect(api.setImageColor('i1', 'red')).rejects.toThrow()
+})
 
 test('saveAuction crea la subasta si no existe y solo envía columnas configurables', async () => {
   const f = fakeSupabase({ auctions: [] })

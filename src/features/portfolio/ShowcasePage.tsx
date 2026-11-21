@@ -7,7 +7,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { buildWhatsAppLink, instagramUrl } from '../../config/contact'
 import { env } from '../../config/env'
 import { imageSrcSet, imageUrl } from '../../lib/cloudinary'
-import { isLightColor, safeColor } from '../../lib/color'
+import { backgroundOf, isLightColor, safeColor } from '../../lib/color'
 import { priceLabel } from '../../lib/price'
 import { useAsync } from '../../lib/useAsync'
 import type { Auction, Category } from '../../types'
@@ -159,7 +159,7 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
   const price = priceLabel(current)
 
   return (
-    <Frame color={current.cover?.dominant_color ?? null}>
+    <Frame color={backgroundOf(current.cover)}>
       <div className="sc-stage">
         <header className="sc-header">
           <Link to="/" className="sc-brand">Ale Arte</Link>

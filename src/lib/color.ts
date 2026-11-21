@@ -59,7 +59,7 @@ export function dominantColor(rgba: Uint8ClampedArray): string {
   let l = Math.min(L_MAX, Math.max(L_MIN, l0))
   let hex = toHex(fromHsl(h, s, l))
   // Zona media: ni claro (texto oscuro) ni con contraste 4.5:1 con blanco → oscurecer.
-  while (!isLightColor(hex) && luminance(hex) > WHITE_TEXT_MAX_LUM && l > 0.06) {
+  while (luminance(hex) <= AUTO_LIGHT_MIN_LUM && luminance(hex) > WHITE_TEXT_MAX_LUM && l > 0.06) {
     l -= 0.02
     hex = toHex(fromHsl(h, s, l))
   }
@@ -69,9 +69,20 @@ export function dominantColor(rgba: Uint8ClampedArray): string {
 /** Contraste 4.5:1 con blanco ⇔ luminancia ≤ 0.183. */
 const WHITE_TEXT_MAX_LUM = 1.05 / 4.5 - 0.05
 
-/** Luminancia relativa WCAG > 0.45 → usar texto oscuro. */
+/** El automático evita tonos medios: o claro de verdad (> 0.45) o oscuro con 4.5:1 con blanco. */
+const AUTO_LIGHT_MIN_LUM = 0.45
+
+/**
+ * ¿Texto oscuro? Cuando el blanco ya no llega a 4.5:1 (luminancia > 0.183), el oscuro sí.
+ * Así cualquier color, también el elegido a mano en el panel, se lee.
+ */
 export function isLightColor(hex: string): boolean {
-  return luminance(hex) > 0.45
+  return luminance(hex) > WHITE_TEXT_MAX_LUM
+}
+
+/** Fondo del escaparate para una imagen: el elegido en el panel o, si no hay, el automático. */
+export function backgroundOf(img: { dominant_color: string | null; custom_color: string | null } | null | undefined): string | null {
+  return img ? img.custom_color ?? img.dominant_color : null
 }
 
 function luminance(hex: string): number {
@@ -84,6 +95,8 @@ function luminance(hex: string): number {
 }
 
 /** Solo acepta #rrggbb (el valor viene de la BD y va a CSS). */
+export const isHexColor = (value: string) => HEX_RE.test(value)
+
 export function safeColor(value: string | null | undefined): string {
   return value && HEX_RE.test(value) ? value : DEFAULT_BG
 }
