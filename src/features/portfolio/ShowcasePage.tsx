@@ -191,7 +191,7 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
             {auction ? (
               <AuctionCta auction={auction} onBid={() => setBidOpen(true)} whatsapp={buildWhatsAppLink({ artworkTitle: current.title, artworkUrl: url })} />
             ) : (
-              <a className="sc-cta" href={buildWhatsAppLink({ artworkTitle: current.title, artworkUrl: url })} target="_blank" rel="noopener noreferrer">
+              <a className="sc-cta" href={buildWhatsAppLink({ artworkTitle: current.title, artworkUrl: url, status: current.availability_status })} target="_blank" rel="noopener noreferrer">
                 {CTA[current.availability_status]} <span aria-hidden="true">→</span>
               </a>
             )}

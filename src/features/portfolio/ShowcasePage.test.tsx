@@ -69,7 +69,8 @@ test('siguiente / anterior (botones y teclado) cambian la obra y la URL', async 
   expect(screen.getByTestId('where').textContent).toBe('/obra/obra-2')
   // Sin precio numérico, la columna de datos no repite el botón: dice el precio en texto discreto.
   expect(screen.getByText('Precio a convenir', { selector: '.sc-price.is-text' })).toBeInTheDocument()
-  expect(screen.getByRole('link', { name: /Cotiza la tuya/ })).toBeInTheDocument()
+  const cotiza = screen.getByRole('link', { name: /Cotiza la tuya/ })
+  expect(decodeURIComponent(cotiza.getAttribute('href')!)).toContain('"Obra 2", que fue un encargo, y me gustaría saber cuánto costaría una similar')
   expect(screen.getByText('Por encargo.')).toBeInTheDocument()
   fireEvent.keyDown(window, { key: 'ArrowRight' })
   expect(screen.getByRole('heading', { level: 1, name: 'Mural 3' })).toBeInTheDocument()
