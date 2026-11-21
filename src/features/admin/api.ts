@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { reorder, type Direction } from '../../lib/order'
+import { moveTo, reorder, type Direction } from '../../lib/order'
 import { isHexColor } from '../../lib/color'
 import { supabase } from '../../lib/supabase'
 import { uploadArtworkImage } from '../../lib/upload'
@@ -46,9 +46,12 @@ export function createAdminApi(db: SupabaseClient) {
     for (const r of rows) check(await db.from(table).update({ display_order: r.display_order }).eq('id', r.id).select('id'))
   }
 
-  const moveArtwork = async (id: string, dir: Direction) => {
+  /** Arrastrar y soltar: lleva la obra a la posición `to` y solo guarda las filas cuyo orden cambia. */
+  const placeArtwork = async (id: string, to: number) => {
     const list = await adminListArtworks()
-    await applyOrder('artworks', reorder(list.map((a) => a.id), id, dir))
+    const current = new Map(list.map((a) => [a.id, a.display_order]))
+    const rows = moveTo(list.map((a) => a.id), id, to).map((x, n) => ({ id: x, display_order: n }))
+    await applyOrder('artworks', rows.filter((r) => current.get(r.id) !== r.display_order))
   }
 
   /** Portada (o primera imagen) de cada obra, para las miniaturas de la lista. */
@@ -152,7 +155,7 @@ export function createAdminApi(db: SupabaseClient) {
   return {
     listCovers, getAuction, saveAuction, deleteAuction, listBids, deleteBid,
     adminListArtworks, adminGetArtwork, createArtwork, updateArtwork, deleteArtwork, setPublication, setAvailability,
-    moveArtwork, takenSlugs, uploadImage, setCover, updateImageAlt, setImageColor, setImageCutout, deleteImage, moveImage, replaceImage,
+    placeArtwork, takenSlugs, uploadImage, setCover, updateImageAlt, setImageColor, setImageCutout, deleteImage, moveImage, replaceImage,
     listCategories, createCategory, updateCategory, deleteCategory, moveCategory,
   }
 }

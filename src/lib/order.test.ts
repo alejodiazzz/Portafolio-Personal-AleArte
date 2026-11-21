@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { reorder } from './order'
+import { moveTo, reorder } from './order'
 
 test('subir intercambia con el anterior y renumera', () => {
   expect(reorder(['a', 'b', 'c'], 'b', 'up')).toEqual([
@@ -16,4 +16,12 @@ test('bajar el último no cambia nada', () => {
 })
 test('id inexistente lanza error', () => {
   expect(() => reorder(['a'], 'z', 'up')).toThrow()
+})
+
+test('moveTo lleva el elemento a cualquier posición (arrastrar y soltar)', () => {
+  expect(moveTo(['a', 'b', 'c', 'd'], 'a', 2)).toEqual(['b', 'c', 'a', 'd'])
+  expect(moveTo(['a', 'b', 'c', 'd'], 'd', 0)).toEqual(['d', 'a', 'b', 'c'])
+  expect(moveTo(['a', 'b', 'c'], 'b', 99)).toEqual(['a', 'c', 'b'])
+  expect(moveTo(['a', 'b', 'c'], 'b', -5)).toEqual(['b', 'a', 'c'])
+  expect(() => moveTo(['a'], 'z', 0)).toThrow()
 })

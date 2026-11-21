@@ -35,6 +35,16 @@ test('setImageCutout guarda el marco con forma', async () => {
   expect(f.calls.filter((c) => c.method === 'update').map((c) => c.args[0])).toEqual([{ is_cutout: true }])
 })
 
+test('placeArtwork mueve la obra a una posición y solo actualiza las filas que cambian', async () => {
+  const f = fakeSupabase({ artworks: [
+    { id: 'a', display_order: 0 }, { id: 'b', display_order: 1 }, { id: 'c', display_order: 2 }, { id: 'd', display_order: 3 },
+  ] })
+  await createAdminApi(f.client as never).placeArtwork('a', 2)
+  const updates = f.calls.filter((c) => c.table === 'artworks' && c.method === 'update').map((c) => c.args[0])
+  // b→0, c→1, a→2; d no cambia
+  expect(updates).toEqual([{ display_order: 0 }, { display_order: 1 }, { display_order: 2 }])
+})
+
 test('saveAuction crea la subasta si no existe y solo envía columnas configurables', async () => {
   const f = fakeSupabase({ auctions: [] })
   await createAdminApi(f.client as never).saveAuction('a1', { starting_price: 100000, min_increment: 10000, ends_at: '2026-12-01T20:00:00.000Z', is_active: true })
