@@ -170,3 +170,5 @@
 .ad-bg label { display: inline-flex; gap: 8px; align-items: center; }
 .ad-bg input[type='color'] { width: 44px; height: 44px; padding: 2px; border: 1px solid var(--line); border-radius: 8px; background: #fff; cursor: pointer; }
 .ad-bg-note { font-size: 13px; color: var(--ink-soft); }
+.ad-images .ad-check { display: flex; gap: 8px; align-items: center; font-size: 14px; padding: 0; }
+.ad-images .ad-check input { width: 18px; height: 18px; flex: none; }

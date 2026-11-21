@@ -29,6 +29,12 @@ test('setImageColor guarda #rrggbb en custom_color; null vuelve al automático',
   await expect(api.setImageColor('i1', 'red')).rejects.toThrow()
 })
 
+test('setImageCutout guarda el marco con forma', async () => {
+  const f = fakeSupabase({ artwork_images: [{ id: 'i1' }] })
+  await createAdminApi(f.client as never).setImageCutout('i1', true)
+  expect(f.calls.filter((c) => c.method === 'update').map((c) => c.args[0])).toEqual([{ is_cutout: true }])
+})
+
 test('saveAuction crea la subasta si no existe y solo envía columnas configurables', async () => {
   const f = fakeSupabase({ auctions: [] })
   await createAdminApi(f.client as never).saveAuction('a1', { starting_price: 100000, min_increment: 10000, ends_at: '2026-12-01T20:00:00.000Z', is_active: true })

@@ -83,6 +83,11 @@ export function createAdminApi(db: SupabaseClient) {
     check(await db.from('artwork_images').update({ custom_color }).eq('id', imageId).select('id'))
   }
 
+  /** Marco con la forma de la obra (imagen con fondo transparente). */
+  const setImageCutout = async (imageId: string, is_cutout: boolean) => {
+    check(await db.from('artwork_images').update({ is_cutout }).eq('id', imageId).select('id'))
+  }
+
   const deleteImage = async (imageId: string) => {
     const { error } = await db.functions.invoke('media-delete', { body: { imageId } })
     if (error) throw error
@@ -147,7 +152,7 @@ export function createAdminApi(db: SupabaseClient) {
   return {
     listCovers, getAuction, saveAuction, deleteAuction, listBids, deleteBid,
     adminListArtworks, adminGetArtwork, createArtwork, updateArtwork, deleteArtwork, setPublication, setAvailability,
-    moveArtwork, takenSlugs, uploadImage, setCover, updateImageAlt, setImageColor, deleteImage, moveImage, replaceImage,
+    moveArtwork, takenSlugs, uploadImage, setCover, updateImageAlt, setImageColor, setImageCutout, deleteImage, moveImage, replaceImage,
     listCategories, createCategory, updateCategory, deleteCategory, moveCategory,
   }
 }

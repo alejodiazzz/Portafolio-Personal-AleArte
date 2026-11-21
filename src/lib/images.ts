@@ -23,7 +23,7 @@ export async function validateImageFile(file: File): Promise<{ ok: true } | { ok
 }
 
 /** Reescala (lado mayor ≤ 2560 px), convierte a WebP q0.9 y calcula el color de fondo del escaparate. */
-export async function prepareImage(file: File): Promise<{ blob: Blob; width: number; height: number; color: string }> {
+export async function prepareImage(file: File): Promise<{ blob: Blob; width: number; height: number; color: string; cutout: boolean }> {
   const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
   const scale = Math.min(1, MAX_DIMENSION / Math.max(bitmap.width, bitmap.height))
   const width = Math.round(bitmap.width * scale)
@@ -38,17 +38,29 @@ export async function prepareImage(file: File): Promise<{ blob: Blob; width: num
   bitmap.close()
   const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/webp', WEBP_QUALITY))
   if (!blob || blob.type !== 'image/webp') throw new Error('El navegador no pudo convertir a WebP')
-  return { blob, width, height, color: colorOf(canvas) }
+  return { blob, width, height, ...analyze(canvas) }
 }
 
-/** Color dominante sobre una miniatura de 64 px (rápido y suficiente). */
-function colorOf(source: HTMLCanvasElement): string {
+/**
+ * ¿Obra recortada (fondo transparente, p. ej. un óvalo)? Más del 2 % de píxeles transparentes;
+ * así unos pocos píxeles sueltos de una foto normal no cuentan.
+ */
+export function hasTransparency(rgba: Uint8ClampedArray): boolean {
+  const total = rgba.length / 4
+  let clear = 0
+  for (let i = 3; i < rgba.length; i += 4) if (rgba[i] < 128) clear++
+  return total > 0 && clear / total > 0.02
+}
+
+/** Color dominante y transparencia sobre una miniatura de 64 px (rápido y suficiente). */
+function analyze(source: HTMLCanvasElement): { color: string; cutout: boolean } {
   const scale = 64 / Math.max(source.width, source.height)
   const small = document.createElement('canvas')
   small.width = Math.max(1, Math.round(source.width * scale))
   small.height = Math.max(1, Math.round(source.height * scale))
   const ctx = small.getContext('2d', { willReadFrequently: true })
-  if (!ctx) return dominantColor(new Uint8ClampedArray())
+  if (!ctx) return { color: dominantColor(new Uint8ClampedArray()), cutout: false }
   ctx.drawImage(source, 0, 0, small.width, small.height)
-  return dominantColor(ctx.getImageData(0, 0, small.width, small.height).data)
+  const data = ctx.getImageData(0, 0, small.width, small.height).data
+  return { color: dominantColor(data), cutout: hasTransparency(data) }
 }

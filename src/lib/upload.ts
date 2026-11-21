@@ -49,6 +49,7 @@ export async function uploadArtworkImage(
       format: uploaded.format,
       bytes: uploaded.bytes,
       dominant_color: prepared.color,
+      is_cutout: prepared.cutout,
       is_cover: opts.isCover ?? false,
       display_order: opts.displayOrder ?? 0,
     })

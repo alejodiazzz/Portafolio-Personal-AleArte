@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { detectImageType, MAX_INPUT_BYTES, validateImageFile } from './images'
+import { detectImageType, hasTransparency, MAX_INPUT_BYTES, validateImageFile } from './images'
 
 const bytes = (...b: number[]) => new Uint8Array([...b, ...new Array(16).fill(0)])
 const ascii = (s: string) => new Uint8Array([...new TextEncoder().encode(s), ...new Array(16).fill(0)])
@@ -39,5 +39,18 @@ describe('validateImageFile', () => {
   })
   test('MAX_INPUT_BYTES es 15 MB', () => {
     expect(MAX_INPUT_BYTES).toBe(15 * 1024 * 1024)
+  })
+})
+
+describe('hasTransparency (obra recortada: el marco sigue su forma)', () => {
+  const px = (alphas: number[]) => new Uint8ClampedArray(alphas.flatMap((a) => [120, 90, 60, a]))
+  test('foto opaca → no', () => {
+    expect(hasTransparency(px(new Array(400).fill(255)))).toBe(false)
+  })
+  test('óvalo con esquinas transparentes → sí', () => {
+    expect(hasTransparency(px([...new Array(300).fill(255), ...new Array(100).fill(0)]))).toBe(true)
+  })
+  test('unos pocos píxeles semitransparentes sueltos (ruido) → no', () => {
+    expect(hasTransparency(px([...new Array(398).fill(255), 0, 0]))).toBe(false)
   })
 })

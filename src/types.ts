@@ -26,6 +26,8 @@ export type ArtworkImage = {
   dominant_color: string | null
   /** #rrggbb elegido en el panel; si existe, reemplaza al automático. */
   custom_color: string | null
+  /** Fondo transparente (p. ej. óvalo): el marco del escaparate sigue su forma. */
+  is_cutout: boolean
   created_at: string
 }
 

@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { buildWhatsAppLink, instagramUrl } from '../../config/contact'
 import { env } from '../../config/env'
-import { imageSrcSet, imageUrl } from '../../lib/cloudinary'
+import { cutoutSize, imageSrcSet, imageUrl } from '../../lib/cloudinary'
 import { backgroundOf, isLightColor, safeColor } from '../../lib/color'
 import { priceLabel } from '../../lib/price'
 import { useAsync } from '../../lib/useAsync'
@@ -134,8 +134,9 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
       if (!w?.cover) continue
       const img = new Image()
       img.sizes = PIECE_SIZES
-      img.srcset = imageSrcSet(w.cover.storage_path, w.cover.width)
-      img.src = imageUrl(w.cover.storage_path, 1600)
+      const opts = { cutout: w.cover.is_cutout }
+      img.srcset = imageSrcSet(w.cover.storage_path, w.cover.width, opts)
+      img.src = imageUrl(w.cover.storage_path, 1600, opts)
       // Decodificar de antemano: en el celular, decodificar al llegar es lo que dejaba el marco vacío.
       img.decode?.().catch(() => {})
     }
@@ -396,6 +397,8 @@ const FINE_POINTER = '(hover: hover) and (pointer: fine)'
 
 function Piece({ work, className, priority = false, onZoom }: { work: ShowcaseArtwork; className: string; priority?: boolean; onZoom?: () => void }) {
   const img = work.cover
+  const cutout = { cutout: !!img?.is_cutout }
+  const size = img?.is_cutout && img.width && img.height ? cutoutSize(img.width, img.height) : img
   // La entrada se pausa hasta que la imagen carga: si no, se anima un marco vacío.
   const [loaded, setLoaded] = useState(!img || className.includes('is-out'))
   const markLoaded = () => setLoaded(true)
@@ -416,12 +419,13 @@ function Piece({ work, className, priority = false, onZoom }: { work: ShowcaseAr
             ref={(el) => { if (el?.complete && el.naturalWidth > 0) whenReady(el) }}
             onLoad={(e) => whenReady(e.currentTarget)}
             onError={markLoaded}
-            src={imageUrl(img.storage_path, 1600)}
-            srcSet={imageSrcSet(img.storage_path, img.width)}
+            className={img.is_cutout ? 'is-cutout' : undefined}
+            src={imageUrl(img.storage_path, 1600, cutout)}
+            srcSet={imageSrcSet(img.storage_path, img.width, cutout)}
             sizes={PIECE_SIZES}
             alt={img.image_alt ?? `${work.title}${work.technique ? `, ${work.technique}` : ''}`}
-            width={img.width ?? undefined}
-            height={img.height ?? undefined}
+            width={size?.width ?? undefined}
+            height={size?.height ?? undefined}
             decoding="async"
             fetchPriority={priority ? 'high' : 'auto'}
           />

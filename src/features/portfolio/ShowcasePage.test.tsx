@@ -7,7 +7,7 @@ const work = (i: number, over: Record<string, unknown> = {}) => ({
   height: 30, width: 20, measurement_unit: 'cm', technique: `Técnica ${i}`, category_id: 'c1', creation_date: null,
   availability_status: 'available', display_order: i, created_at: '', instagram_url: null, auction: null,
   cover: { id: `i${i}`, artwork_id: `a${i}`, storage_path: `ale-arte/artworks/a${i}/x`, image_alt: null, width: 800, height: 1000,
-    is_cover: true, display_order: 0, dominant_color: '#183961', custom_color: null },
+    is_cover: true, display_order: 0, dominant_color: '#183961', custom_color: null, is_cutout: false },
   ...over,
 })
 const CATS = [
@@ -93,6 +93,17 @@ test('la marca es la firma (imagen) y conserva el nombre para lectores de pantal
   const brand = screen.getByRole('link', { name: 'Alejandro Díaz · Ale Arte' })
   expect(brand).toHaveAttribute('href', '/')
   expect(brand.querySelector('.sc-signature')).not.toBeNull()
+})
+
+test('obra recortada (óvalo): el marco sigue su forma en vez de ser un rectángulo', async () => {
+  listImpl = async () => [work(1, { cover: { ...work(1).cover, is_cutout: true } }), work(2)]
+  renderAt('/')
+  const img = (await screen.findByRole('img', { name: /Obra 1/ })) as HTMLImageElement
+  expect(img.classList.contains('is-cutout')).toBe(true)
+  expect(img.getAttribute('src')).toContain('e_outline:outer:')
+  expect(img.getAttribute('srcset')).toContain('e_outline:outer:')
+  // 800×1000 más el margen del contorno a ambos lados
+  expect(img.getAttribute('height')).toBe('984')
 })
 
 test('fondo claro → texto oscuro', async () => {

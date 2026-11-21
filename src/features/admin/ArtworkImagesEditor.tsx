@@ -102,6 +102,10 @@ export function ArtworkImagesEditor({ artworkId, defaultAlt }: { artworkId: stri
                 <input defaultValue={img.image_alt ?? ''} maxLength={250} onBlur={(e) => run(() => adminApi.updateImageAlt(img.id, e.target.value))} />
               </label>
             </p>
+            <label className="ad-check">
+              <input type="checkbox" checked={img.is_cutout} onChange={(e) => run(() => adminApi.setImageCutout(img.id, e.target.checked))} />
+              Marco con la forma de la obra (fondo transparente)
+            </label>
             <BackgroundColor key={backgroundOf(img) ?? 'auto'} img={img} onSave={(c) => run(() => adminApi.setImageColor(img.id, c))} />
             <p className="ad-tools">
               <button type="button" className="ad-icon-btn is-ghost" aria-label="Mover antes" disabled={i === 0} onClick={() => run(() => adminApi.moveImage(img.id, 'up'))}>↑</button>{' '}

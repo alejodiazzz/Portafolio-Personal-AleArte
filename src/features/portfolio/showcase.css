@@ -129,6 +129,11 @@ button.sc-cta:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
   padding: clamp(10px, 1.6vw, 22px); background: var(--mat);
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 30px 50px -28px rgba(0, 0, 0, 0.55), 0 8px 16px -10px rgba(0, 0, 0, 0.3);
 }
+/* Obra recortada (óvalo…): el marco ya viene dibujado siguiendo su forma; la sombra también la sigue. */
+.sc-piece img.is-cutout {
+  padding: 0; background: none; box-shadow: none;
+  filter: drop-shadow(0 0 0.5px rgba(0, 0, 0, 0.12)) drop-shadow(0 22px 22px rgba(0, 0, 0, 0.32)) drop-shadow(0 6px 8px rgba(0, 0, 0, 0.18));
+}
 .sc-noimg { width: min(60cqw, 320px); aspect-ratio: 4 / 5; display: grid; place-items: center; color: #6b645c; font-size: 14px; }
 /* Sombra de piso (de la variante A): la obra "flota" */
 .sc-floor {
