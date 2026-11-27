@@ -118,6 +118,37 @@ button.sc-cta:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 }
 .sc-ig:hover { color: var(--ink); text-decoration-color: currentColor; }
 
+.sc-location-btn {
+  all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+  margin-top: 10px; font-size: 13px; font-weight: 600; color: var(--ink);
+  padding: 6px 14px; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--glass); backdrop-filter: blur(8px); width: fit-content;
+  transition: background 0.2s, transform 0.2s var(--ease);
+}
+.sc-location-btn:hover { background: color-mix(in srgb, var(--ink) 20%, transparent); transform: translateY(-1px); }
+.sc-location-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* ── Modal de Mapa (OpenStreetMap) ── */
+.sc-map-modal {
+  width: min(640px, 100%);
+}
+.sc-map-sub {
+  font-size: 14px; color: var(--ink-soft); margin-top: 4px;
+}
+.sc-map-frame-wrap {
+  width: 100%; height: 320px; border-radius: 14px; overflow: hidden;
+  margin: 16px 0; border: 1px solid var(--line);
+}
+.sc-map-iframe {
+  width: 100%; height: 100%; border: 0;
+}
+.sc-map-actions {
+  display: flex; justify-content: flex-end; margin-top: 12px;
+}
+.sc-map-actions .sc-cta {
+  width: 100%; justify-content: center;
+}
+
 /* ── La obra ── */
 .sc-art { grid-column: 2; grid-row: 2; position: relative; min-height: 0; touch-action: pan-y; overscroll-behavior-x: none; container-type: size; }
 .sc-piece { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
@@ -308,7 +339,7 @@ button.sc-cta:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
   .sc-signature { height: 34px; }
   .sc-pills { display: none; }
   .sc-info, .sc-side, .sc-footer { display: contents; }
-  .sc-info > .sc-nav, .sc-info > .sc-tech, .sc-info > .sc-desc, .sc-info > .sc-ig, .sc-side > *, .sc-footer > .sc-motto { display: none; }
+  .sc-info > .sc-nav, .sc-info > .sc-tech, .sc-info > .sc-desc, .sc-info > .sc-ig, .sc-info > .sc-location-btn, .sc-side > *, .sc-footer > .sc-motto { display: none; }
 
   .sc-title { grid-area: title; margin-top: 18px; text-align: center; font-size: clamp(28px, 8.4vw, 40px); line-height: 1.06; text-wrap: balance; }
   .sc-sub { display: block; grid-area: sub; margin-top: 8px; text-align: center; font-size: 13px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }

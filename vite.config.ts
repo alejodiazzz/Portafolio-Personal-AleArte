@@ -9,7 +9,7 @@ export function securityHeaders(supabaseUrl: string): string {
   const csp = [
     "default-src 'self'",
     "script-src 'self' https://challenges.cloudflare.com",
-    "frame-src https://challenges.cloudflare.com",
+    "frame-src https://challenges.cloudflare.com https://www.openstreetmap.org",
     "img-src 'self' data: https://res.cloudinary.com",
     `connect-src 'self' ${supabase} ${realtime} https://api.cloudinary.com`,
     "style-src 'self' 'unsafe-inline'",

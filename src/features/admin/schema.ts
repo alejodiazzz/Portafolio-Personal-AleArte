@@ -23,10 +23,17 @@ export const artworkInputSchema = z
       .regex(/^https:\/\/www\.instagram\.com\/(p|reel|tv)\/[A-Za-z0-9_-]{5,64}\/$/, 'Pega el enlace de una publicación de Instagram (instagram.com/p/…)')
       .nullish()
       .transform((v) => v ?? null),
+    location_name: optionalText(250).nullish().transform((v) => v ?? null),
+    latitude: z.number().min(-90, 'Latitud inválida').max(90, 'Latitud inválida').nullish().transform((v) => v ?? null),
+    longitude: z.number().min(-180, 'Longitud inválida').max(180, 'Longitud inválida').nullish().transform((v) => v ?? null),
   })
   .refine((v) => (v.height == null && v.width == null) || v.measurement_unit != null, {
     message: 'Indica la unidad de medida',
     path: ['measurement_unit'],
+  })
+  .refine((v) => (v.latitude == null && v.longitude == null) || (v.latitude != null && v.longitude != null), {
+    message: 'Debes indicar tanto latitud como longitud o dejar ambas vacías',
+    path: ['latitude'],
   })
 
 export type ArtworkInput = z.infer<typeof artworkInputSchema>

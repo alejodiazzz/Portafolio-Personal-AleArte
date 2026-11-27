@@ -11,13 +11,15 @@ import { artworkInputSchema } from './schema'
 
 type Form = Record<
   'title' | 'slug' | 'description' | 'price' | 'height' | 'width' | 'measurement_unit' | 'technique' | 'category_id' |
-  'creation_date' | 'availability_status' | 'publication_status' | 'display_order' | 'instagram_url',
+  'creation_date' | 'availability_status' | 'publication_status' | 'display_order' | 'instagram_url' |
+  'location_name' | 'latitude' | 'longitude',
   string
 >
 
 const EMPTY: Form = {
   title: '', slug: '', description: '', price: '', height: '', width: '', measurement_unit: '', technique: '',
   category_id: '', creation_date: '', availability_status: 'available', publication_status: 'draft', display_order: '0', instagram_url: '',
+  location_name: '', latitude: '', longitude: '',
 }
 
 const num = (s: string) => (s.trim() === '' ? null : Number(s))
@@ -27,6 +29,9 @@ const toForm = (a: Artwork): Form => ({
   technique: a.technique ?? '', category_id: a.category_id, creation_date: a.creation_date ?? '',
   availability_status: a.availability_status, publication_status: a.publication_status, display_order: String(a.display_order),
   instagram_url: a.instagram_url ?? '',
+  location_name: a.location_name ?? '',
+  latitude: a.latitude != null ? String(a.latitude) : '',
+  longitude: a.longitude != null ? String(a.longitude) : '',
 })
 
 export function ArtworkFormPage() {
@@ -84,6 +89,9 @@ export function ArtworkFormPage() {
       display_order: Number(form.display_order) || 0,
       // 'invalid' no pasa la regex del esquema y muestra su mensaje.
       instagram_url: instagram,
+      location_name: form.location_name || null,
+      latitude: num(form.latitude),
+      longitude: num(form.longitude),
     })
     if (!parsed.success) {
       const errs: Record<string, string> = {}
@@ -139,6 +147,33 @@ export function ArtworkFormPage() {
           <label>Publicación de Instagram (opcional) <input inputMode="url" maxLength={300} placeholder="https://www.instagram.com/p/…" {...field('instagram_url')} /></label>
           {err('instagram_url') || <span className="ad-hint">Pega el enlace del post o reel; en la obra aparecerá «Ver en Instagram».</span>}
         </p>
+        <fieldset className="ad-wide" style={{ border: '1px solid var(--ad-border, #ddd)', borderRadius: 8, padding: '1rem', margin: '0.5rem 0' }}>
+          <legend style={{ padding: '0 0.5rem', fontWeight: 600 }}>📍 Ubicación en el mapa (Murales / Arte urbano)</legend>
+          <p>
+            <label>Nombre del lugar o dirección
+              <input maxLength={250} placeholder="Ej. Calle 10 # 42-28, El Poblado, Medellín" {...field('location_name')} />
+            </label>
+            {err('location_name')}
+          </p>
+          <div className="ad-row">
+            <label>Latitud <input type="number" step="0.000001" placeholder="Ej. 6.2087" {...field('latitude')} /></label>
+            <label>Longitud <input type="number" step="0.000001" placeholder="Ej. -75.5678" {...field('longitude')} /></label>
+          </div>
+          {err('latitude')}{err('longitude')}
+          {form.latitude && form.longitude && (
+            <p style={{ marginTop: '0.5rem' }}>
+              <a
+                href={`https://www.google.com/maps?q=${encodeURIComponent(form.latitude)},${encodeURIComponent(form.longitude)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ad-hint"
+                style={{ textDecoration: 'underline' }}
+              >
+                Verificar ubicación en Google Maps ↗
+              </a>
+            </p>
+          )}
+        </fieldset>
         <p><label>Orden <input type="number" step={1} {...field('display_order')} /></label></p>
         <div className="ad-actions ad-wide">
           <button type="submit" disabled={busy}>Guardar</button>

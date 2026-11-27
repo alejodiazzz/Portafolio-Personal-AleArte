@@ -17,6 +17,7 @@ import { BidDialog } from './BidDialog'
 import { BrandIcon } from './BrandIcon'
 import { DetailsSheet } from './DetailsSheet'
 import { IndexDialog } from './IndexDialog'
+import { LocationDialog } from './LocationDialog'
 import { ZoomViewer } from './ZoomViewer'
 
 const STATUS: Record<ShowcaseArtwork['availability_status'], string> = {
@@ -70,7 +71,8 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
   const [bidOpen, setBidOpen] = useState(false)
   const [zoomOpen, setZoomOpen] = useState(false)
   const [infoOpen, setInfoOpen] = useState(false)
-  const anyDialog = indexOpen || bidOpen || zoomOpen || infoOpen
+  const [locationOpen, setLocationOpen] = useState(false)
+  const anyDialog = indexOpen || bidOpen || zoomOpen || infoOpen || locationOpen
 
   const usedCategories = useMemo(() => categories.filter((c) => works.some((w) => w.category_id === c.id)), [categories, works])
   const activeCat = usedCategories.find((c) => c.slug === search.get('categoria')) ?? null
@@ -209,6 +211,16 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
               <BrandIcon name="instagram" size={16} /> Ver en Instagram
             </a>
           )}
+          {current.latitude != null && current.longitude != null && (
+            <button
+              type="button"
+              className="sc-location-btn"
+              onClick={() => setLocationOpen(true)}
+              aria-haspopup="dialog"
+            >
+              <span aria-hidden="true">📍</span> Ver ubicación en el mapa
+            </button>
+          )}
         </section>
 
         <Artwork current={current} dir={dir} onSwipe={step} onZoom={() => setZoomOpen(true)} />
@@ -262,6 +274,16 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
               <BrandIcon name="instagram" size={16} /> Ver en Instagram
             </a>
           )}
+          {current.latitude != null && current.longitude != null && (
+            <button
+              type="button"
+              className="sc-location-btn"
+              onClick={() => setLocationOpen(true)}
+              aria-haspopup="dialog"
+            >
+              <span aria-hidden="true">📍</span> Ver ubicación en el mapa
+            </button>
+          )}
         </DetailsSheet>
       )}
 
@@ -295,6 +317,16 @@ function Showcase({ works, categories }: { works: ShowcaseArtwork[]; categories:
             setDir(1)
             go(w, cat)
           }}
+        />
+      )}
+
+      {locationOpen && current.latitude != null && current.longitude != null && (
+        <LocationDialog
+          title={current.title}
+          locationName={current.location_name}
+          latitude={current.latitude}
+          longitude={current.longitude}
+          onClose={() => setLocationOpen(false)}
         />
       )}
     </Frame>

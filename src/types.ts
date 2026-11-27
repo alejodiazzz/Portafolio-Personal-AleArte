@@ -50,6 +50,10 @@ export type PublicArtwork = {
   created_at: string
   /** Publicación de Instagram (formato canónico https://www.instagram.com/p/<código>/). */
   instagram_url: string | null
+  /** Ubicación de la obra (murales / arte urbano). */
+  location_name: string | null
+  latitude: number | null
+  longitude: number | null
 }
 
 /** Estado público de una subasta (sin datos personales). */
