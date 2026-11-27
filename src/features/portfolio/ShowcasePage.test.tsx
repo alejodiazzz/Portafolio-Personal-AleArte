@@ -232,11 +232,13 @@ test('la obra que sale es el mismo elemento que estaba en pantalla (no se recrea
 
 test('precarga la obra anterior y la siguiente con el mismo srcset que usa la página', async () => {
   const seen: string[] = []
-  vi.stubGlobal('Image', class { sizes = ''; set srcset(v: string) { seen.push(v) } set src(_v: string) {} })
+  vi.stubGlobal('Image', class { sizes = ''; set srcset(v: string) { seen.push(v) } set src(_v: string) {} decode() { return Promise.resolve() } })
   renderAt('/obra/obra-2')
   await screen.findByRole('heading', { name: 'Obra 2' })
-  expect(seen.some((s) => s.includes('/a1/'))).toBe(true)
-  expect(seen.some((s) => s.includes('/a3/'))).toBe(true)
+  await waitFor(() => {
+    expect(seen.some((s) => s.includes('/a1/'))).toBe(true)
+    expect(seen.some((s) => s.includes('/a3/'))).toBe(true)
+  })
   vi.unstubAllGlobals()
 })
 
